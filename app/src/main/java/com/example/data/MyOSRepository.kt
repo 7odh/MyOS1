@@ -208,6 +208,30 @@ class MyOSRepository {
         isCompleted = false,
         isGoalTask = false,
         schedule = TaskSchedule.TODAY
+      ),
+      Task(
+        id = "t11",
+        title = "تجديد اشتراك خدمة التخزين السحابي",
+        priority = Priority.LOW,
+        isCompleted = false,
+        isGoalTask = false,
+        schedule = TaskSchedule.NO_DATE
+      ),
+      Task(
+        id = "t12",
+        title = "تنظيف وترتيب المكتبة المنزلية",
+        priority = Priority.LOW,
+        isCompleted = false,
+        isGoalTask = false,
+        schedule = TaskSchedule.NO_DATE
+      ),
+      Task(
+        id = "t13",
+        title = "شراء هدايا للمناسبة العائلية",
+        priority = Priority.MEDIUM,
+        isCompleted = false,
+        isGoalTask = false,
+        schedule = TaskSchedule.TOMORROW
       )
     )
   )
@@ -707,6 +731,39 @@ class MyOSRepository {
     _habits.update { list -> list.filterNot { it.id == habitId } }
   }
 
+  fun pauseHabit(habitId: String, durationDays: Int?) {
+    val pauseUntil = if (durationDays != null && durationDays > 0) {
+      System.currentTimeMillis() + durationDays * 24L * 60 * 60 * 1000
+    } else {
+      null
+    }
+    _habits.update { list ->
+      list.map { habit ->
+        if (habit.id == habitId) {
+          habit.copy(
+            isPaused = true,
+            pauseUntilDate = pauseUntil,
+            pausedAt = System.currentTimeMillis()
+          )
+        } else habit
+      }
+    }
+  }
+
+  fun resumeHabit(habitId: String) {
+    _habits.update { list ->
+      list.map { habit ->
+        if (habit.id == habitId) {
+          habit.copy(
+            isPaused = false,
+            pauseUntilDate = null,
+            pausedAt = null
+          )
+        } else habit
+      }
+    }
+  }
+
   fun addTask(title: String, priority: Priority = Priority.MEDIUM) {
     val newTask = Task(
       id = UUID.randomUUID().toString(),
@@ -717,6 +774,54 @@ class MyOSRepository {
       schedule = TaskSchedule.TODAY
     )
     _generalTasks.update { listOf(newTask) + it }
+  }
+
+  fun addGeneralTask(
+    title: String,
+    notes: String? = null,
+    priority: Priority = Priority.MEDIUM,
+    schedule: TaskSchedule = TaskSchedule.TODAY,
+    dueDateFormatted: String? = null
+  ) {
+    val newTask = Task(
+      id = UUID.randomUUID().toString(),
+      title = title.trim(),
+      notes = notes?.trim()?.ifEmpty { null },
+      priority = priority,
+      isCompleted = false,
+      isGoalTask = false,
+      schedule = schedule,
+      dueDateFormatted = dueDateFormatted?.trim()?.ifEmpty { null },
+      createdAt = System.currentTimeMillis()
+    )
+    _generalTasks.update { listOf(newTask) + it }
+  }
+
+  fun updateGeneralTask(
+    taskId: String,
+    title: String,
+    notes: String?,
+    priority: Priority,
+    schedule: TaskSchedule,
+    dueDateFormatted: String?
+  ) {
+    _generalTasks.update { list ->
+      list.map { task ->
+        if (task.id == taskId) {
+          task.copy(
+            title = title.trim(),
+            notes = notes?.trim()?.ifEmpty { null },
+            priority = priority,
+            schedule = schedule,
+            dueDateFormatted = dueDateFormatted?.trim()?.ifEmpty { null }
+          )
+        } else task
+      }
+    }
+  }
+
+  fun deleteGeneralTask(taskId: String) {
+    _generalTasks.update { list -> list.filterNot { it.id == taskId } }
   }
 
   fun calculateAnalytics(): DailyAnalytics {
@@ -736,11 +841,14 @@ class MyOSRepository {
       habitList.filter { it.isScheduledForToday(todayDay) }
     }
 
+    // Only general tasks scheduled for TODAY are counted in daily analytics!
+    val todayGeneralTasks = taskList.filter { it.isDueToday }
+
     return DailyAnalytics(
       habitsCompleted = todayHabits.count { it.isCompleted },
       habitsTotal = todayHabits.size,
-      tasksCompleted = taskList.count { it.isCompleted },
-      tasksTotal = taskList.size,
+      tasksCompleted = todayGeneralTasks.count { it.isCompleted },
+      tasksTotal = todayGeneralTasks.size,
       goalsCompleted = completedTodayGoalTasks,
       goalsTotal = totalTodayGoalTasks
     )

@@ -39,11 +39,20 @@ class MyOSViewModel(
         val activeGoals = goals.filter { !it.isPaused }
         // Today's goals progress is calculated strictly from today's scheduled goal tasks
         val todayGoalTasks = activeGoals.flatMap { it.todayTasks }
+
+        val todayDay = com.example.model.getCurrentDayOfWeekArabic()
+        val todayHabits = if (user.isRestModeActive) {
+          habits.filter { it.isScheduledForToday(todayDay) && it.isMandatory }
+        } else {
+          habits.filter { it.isScheduledForToday(todayDay) }
+        }
+        val todayGeneralTasks = tasks.filter { !it.isGoalTask && it.schedule == TaskSchedule.TODAY }
+
         val analytics = DailyAnalytics(
-          habitsCompleted = habits.count { it.isCompleted },
-          habitsTotal = habits.size,
-          tasksCompleted = tasks.count { it.isCompleted },
-          tasksTotal = tasks.size,
+          habitsCompleted = todayHabits.count { it.isCompleted },
+          habitsTotal = todayHabits.size,
+          tasksCompleted = todayGeneralTasks.count { it.isCompleted },
+          tasksTotal = todayGeneralTasks.size,
           goalsCompleted = todayGoalTasks.count { it.isCompleted },
           goalsTotal = todayGoalTasks.size
         )
@@ -235,6 +244,7 @@ class MyOSViewModel(
     when (type) {
       QuickAddType.GOAL -> openCreateGoalSheet()
       QuickAddType.HABIT -> openCreateHabitSheet()
+      QuickAddType.TASK -> openCreateTaskSheet()
       else -> _uiState.update { it.copy(activeCreationDialog = type) }
     }
   }
@@ -307,6 +317,34 @@ class MyOSViewModel(
     _uiState.update { it.copy(notificationMessage = "تم حذف العادة بنجاح 🗑️") }
   }
 
+  fun openPauseHabitDialog(habit: Habit) {
+    _uiState.update { it.copy(selectedHabitToPause = habit) }
+  }
+
+  fun closePauseHabitDialog() {
+    _uiState.update { it.copy(selectedHabitToPause = null) }
+  }
+
+  fun pauseHabit(habitId: String, durationDays: Int?) {
+    repository.pauseHabit(habitId, durationDays)
+    closePauseHabitDialog()
+    val daysText = when (durationDays) {
+      null -> "حتى الاستئناف يدوياً"
+      1 -> "ليوم واحد"
+      3 -> "لمدة 3 أيام"
+      7 -> "لمدة أسبوع"
+      14 -> "لمدة أسبوعين"
+      30 -> "لمدة شهر"
+      else -> "لمدة $durationDays يوماً"
+    }
+    _uiState.update { it.copy(notificationMessage = "تم ركن العادة مؤقتاً ($daysText). سجلك وسلسلتك محفوظة بأمان ⏸️") }
+  }
+
+  fun resumeHabit(habitId: String) {
+    repository.resumeHabit(habitId)
+    _uiState.update { it.copy(notificationMessage = "تم استئناف العادة بنجاح! عودة موفقة 🚀") }
+  }
+
   fun toggleHabit(habitId: String) {
     repository.toggleHabit(habitId)
   }
@@ -350,5 +388,61 @@ class MyOSViewModel(
     repository.addTask(title, priority)
     closeCreationDialog()
     _uiState.update { it.copy(notificationMessage = "تمت إضافة المهمة بنجاح ✅") }
+  }
+
+  fun setTaskFilter(filter: TaskFilter) {
+    _uiState.update { it.copy(activeTaskFilter = filter) }
+  }
+
+  fun setTaskSortOrder(order: TaskSortOrder) {
+    _uiState.update { it.copy(taskSortOrder = order) }
+  }
+
+  fun openCreateTaskSheet() {
+    _uiState.update { it.copy(isCreateTaskSheetVisible = true, editingGeneralTask = null) }
+  }
+
+  fun openEditTask(task: Task) {
+    _uiState.update { it.copy(isCreateTaskSheetVisible = true, editingGeneralTask = task) }
+  }
+
+  fun closeCreateTaskSheet() {
+    _uiState.update { it.copy(isCreateTaskSheetVisible = false, editingGeneralTask = null) }
+  }
+
+  fun saveGeneralTask(
+    title: String,
+    notes: String?,
+    priority: Priority,
+    schedule: TaskSchedule,
+    dueDateFormatted: String?
+  ) {
+    val editing = _uiState.value.editingGeneralTask
+    if (editing != null) {
+      repository.updateGeneralTask(
+        taskId = editing.id,
+        title = title,
+        notes = notes,
+        priority = priority,
+        schedule = schedule,
+        dueDateFormatted = dueDateFormatted
+      )
+      _uiState.update { it.copy(notificationMessage = "تم تعديل المهمة بنجاح ✅") }
+    } else {
+      repository.addGeneralTask(
+        title = title,
+        notes = notes,
+        priority = priority,
+        schedule = schedule,
+        dueDateFormatted = dueDateFormatted
+      )
+      _uiState.update { it.copy(notificationMessage = "تمت إضافة المهمة بنجاح ✨") }
+    }
+    closeCreateTaskSheet()
+  }
+
+  fun deleteGeneralTask(taskId: String) {
+    repository.deleteGeneralTask(taskId)
+    _uiState.update { it.copy(notificationMessage = "تم حذف المهمة") }
   }
 }

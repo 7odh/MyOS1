@@ -2,6 +2,7 @@ package com.example.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import com.example.model.Goal
 import com.example.model.Habit
 import com.example.model.Task
+import com.example.model.TaskSchedule
 import com.example.ui.theme.BorderLight
 import com.example.ui.theme.BrightBlue
 import com.example.ui.theme.GoalBlue
@@ -63,6 +65,7 @@ fun TodaySection(
   onToggleTask: (String) -> Unit,
   onToggleGoalTask: (String, String) -> Unit,
   onViewAllClick: () -> Unit,
+  onNavigateToTasks: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val todayDay = com.example.model.getCurrentDayOfWeekArabic()
@@ -73,16 +76,16 @@ fun TodaySection(
     todayScheduledHabits
   }
 
-  // Active goals: paused goals are shelved, and 100% completed goals disappear from the daily Home dashboard
-  val activeGoals = goals.filter { !it.isPaused && it.progressPercentage < 100 }
+  // Active goals: paused goals are shelved, 100% completed goals disappear, and only goals with tasks scheduled for TODAY are shown
+  val activeGoals = goals.filter { !it.isPaused && it.progressPercentage < 100 && it.todayTasks.isNotEmpty() }
 
   // Independent accordion state for each goal. By default, expand the first goal if available.
   var expandedGoalIds by remember(activeGoals.map { it.id }) {
     mutableStateOf(setOfNotNull(activeGoals.firstOrNull()?.id))
   }
 
-  // Filter out goal tasks so they never duplicate in general tasks
-  val generalTasks = tasks.filter { !it.isGoalTask }
+  // On the Home screen: ONLY general tasks scheduled for TODAY appear! Tasks without a date or for future days appear only in Tasks screen.
+  val generalTasks = tasks.filter { !it.isGoalTask && it.isDueToday }
 
   Column(
     modifier = modifier
@@ -245,7 +248,9 @@ fun TodaySection(
         ) {
           // Tasks Header Row
           Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+              .fillMaxWidth()
+              .clickable { onNavigateToTasks() },
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
           ) {
@@ -268,7 +273,7 @@ fun TodaySection(
               }
               Spacer(modifier = Modifier.width(8.dp))
               Text(
-                text = "المهام",
+                text = "المهام المستحقة اليوم",
                 style = MaterialTheme.typography.titleSmall.copy(
                   fontWeight = FontWeight.Bold,
                   fontSize = 14.sp
@@ -278,7 +283,7 @@ fun TodaySection(
             }
 
             Text(
-              text = "${generalTasks.count { it.isCompleted }} من ${generalTasks.size} مكتملة",
+              text = "${generalTasks.count { it.isCompleted }} من ${generalTasks.size} مكتملة  ←",
               style = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.Medium,
                 fontSize = 11.sp
@@ -289,8 +294,14 @@ fun TodaySection(
 
           Spacer(modifier = Modifier.height(10.dp))
 
-          // Display uncompleted first, then completed (take 3)
-          val displayTasks = generalTasks.sortedBy { it.isCompleted }.take(3)
+          // Display uncompleted first, then sorted by priority (High -> Medium -> Low -> None)
+          val displayTasks = generalTasks
+            .sortedWith(
+              compareBy<Task> { it.isCompleted }
+                .thenBy { it.priority.rank }
+                .thenBy { it.createdAt }
+            )
+            .take(5)
           displayTasks.forEach { task ->
             TaskItemRow(
               task = task,

@@ -230,4 +230,121 @@ class ExampleRobolectricTest {
     val mandatoryHabitsCount = repository.habits.value.count { it.isMandatory }
     assertEquals(mandatoryHabitsCount, analytics.habitsTotal)
   }
+
+  @Test
+  fun `test habit pause freeze feature with history preservation`() {
+    val repository = MyOSRepository()
+    val pushupsBefore = repository.habits.value.first { it.id == "h5" }
+    assertEquals(11, pushupsBefore.currentStreak)
+    assertEquals(30, pushupsBefore.currentValue)
+    assertFalse(pushupsBefore.isCurrentlyPaused)
+
+    // Pause pushups habit for 7 days (ركن العادة لمدة أسبوع)
+    repository.pauseHabit("h5", durationDays = 7)
+    val pushupsPaused = repository.habits.value.first { it.id == "h5" }
+
+    // History and streak are fully preserved
+    assertEquals(11, pushupsPaused.currentStreak)
+    assertEquals(30, pushupsPaused.currentValue)
+    assertTrue(pushupsPaused.isPaused)
+    assertTrue(pushupsPaused.isCurrentlyPaused)
+    assertEquals(7, pushupsPaused.pauseRemainingDays)
+    assertTrue(pushupsPaused.pauseStatusDescription!!.contains("7 أيام") || pushupsPaused.pauseStatusDescription!!.contains("أيام"))
+
+    // Paused habit must NEVER appear in today's schedule on Home screen
+    val todayDay = com.example.model.getCurrentDayOfWeekArabic()
+    assertFalse(pushupsPaused.isScheduledForToday(todayDay))
+
+    // Resume the habit (استئناف العادة)
+    repository.resumeHabit("h5")
+    val pushupsResumed = repository.habits.value.first { it.id == "h5" }
+
+    assertFalse(pushupsResumed.isPaused)
+    assertFalse(pushupsResumed.isCurrentlyPaused)
+    // Streak is still preserved
+    assertEquals(11, pushupsResumed.currentStreak)
+    assertEquals(30, pushupsResumed.currentValue)
+    assertTrue(pushupsResumed.isScheduledForToday(todayDay))
+  }
+
+  @Test
+  fun `test home screen only displays due today items and excludes no-date tasks`() {
+    val repository = MyOSRepository()
+    val allTasks = repository.generalTasks.value
+
+    // Confirm we have tasks with TODAY, NO_DATE, and TOMORROW
+    assertTrue(allTasks.any { it.schedule == TaskSchedule.TODAY })
+    assertTrue(allTasks.any { it.schedule == TaskSchedule.NO_DATE })
+    assertTrue(allTasks.any { it.schedule == TaskSchedule.TOMORROW })
+
+    // On Home screen: ONLY general tasks with schedule == TODAY are displayed
+    val homeTasks = allTasks.filter { !it.isGoalTask && it.schedule == TaskSchedule.TODAY }
+    assertTrue(homeTasks.all { it.schedule == TaskSchedule.TODAY })
+    assertFalse(homeTasks.any { it.schedule == TaskSchedule.NO_DATE })
+    assertFalse(homeTasks.any { it.schedule == TaskSchedule.TOMORROW })
+
+    // Analytics strictly counts only today's tasks
+    val analytics = repository.calculateAnalytics()
+    assertEquals(homeTasks.size, analytics.tasksTotal)
+    assertEquals(homeTasks.count { it.isCompleted }, analytics.tasksCompleted)
+  }
+
+  @Test
+  fun `test tasks screen priority ordering and without-date tasks`() {
+    val repository = MyOSRepository()
+
+    // Add a high priority task with no date
+    repository.addGeneralTask(
+      title = "فكرة مشروع جديدة",
+      notes = "تجهيز المسودة",
+      priority = Priority.HIGH,
+      schedule = TaskSchedule.NO_DATE,
+      dueDateFormatted = null
+    )
+
+    // Add a no-priority (NONE) task for today
+    repository.addGeneralTask(
+      title = "شراء خبز",
+      notes = null,
+      priority = Priority.NONE,
+      schedule = TaskSchedule.TODAY,
+      dueDateFormatted = null
+    )
+
+    val allTasks = repository.generalTasks.value
+    val noDateTask = allTasks.first { it.title == "فكرة مشروع جديدة" }
+    val nonePriorityTask = allTasks.first { it.title == "شراء خبز" }
+
+    // 1. Task without date does NOT appear in Home screen (isDueToday is false)
+    assertFalse(noDateTask.isDueToday)
+
+    // 2. Task with TODAY schedule appears in Home screen
+    assertTrue(nonePriorityTask.isDueToday)
+
+    // 3. Sorting by priority orders HIGH (rank 1) before MEDIUM (rank 2) before LOW (rank 3) before NONE (rank 4)
+    val sortedByPriority = allTasks.filter { !it.isCompleted }.sortedWith(
+      compareBy<com.example.model.Task> { it.priority.rank }
+    )
+    val highIndex = sortedByPriority.indexOfFirst { it.priority == Priority.HIGH }
+    val noneIndex = sortedByPriority.indexOfFirst { it.priority == Priority.NONE }
+    assertTrue(highIndex < noneIndex)
+
+    // 4. Update task to add a date
+    repository.updateGeneralTask(
+      taskId = noDateTask.id,
+      title = "فكرة مشروع جديدة ومراجعة",
+      notes = "تم تحديث المسودة",
+      priority = Priority.HIGH,
+      schedule = TaskSchedule.TODAY,
+      dueDateFormatted = com.example.model.getTodayDateString()
+    )
+
+    val updatedTask = repository.generalTasks.value.first { it.id == noDateTask.id }
+    assertEquals("فكرة مشروع جديدة ومراجعة", updatedTask.title)
+    assertTrue(updatedTask.isDueToday)
+
+    // 5. Delete task
+    repository.deleteGeneralTask(updatedTask.id)
+    assertFalse(repository.generalTasks.value.any { it.id == updatedTask.id })
+  }
 }

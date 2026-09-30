@@ -41,7 +41,7 @@ data class Goal(
   // ordered by priority: High -> Medium -> Low -> No Priority, with stable creation order.
   val todayTasks: List<Task>
     get() = tasks
-      .filter { it.schedule == TaskSchedule.TODAY }
+      .filter { it.isDueToday }
       .sortedWith(
         compareBy<Task> { it.priority.rank }
           .thenBy { it.createdAt }

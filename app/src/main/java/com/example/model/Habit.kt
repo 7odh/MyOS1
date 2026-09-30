@@ -34,7 +34,10 @@ data class Habit(
   val isMandatory: Boolean = false, // If true: never hidden by Rest Mode (e.g. prayer)
   val priority: Priority = Priority.HIGH,
   val currentStreak: Int = 12,
-  val iconEmoji: String = "🌱"
+  val iconEmoji: String = "🌱",
+  val isPaused: Boolean = false,
+  val pauseUntilDate: Long? = null, // epoch millis until which habit is paused, or null if indefinite/not paused
+  val pausedAt: Long? = null
 ) {
   val isCompleted: Boolean
     get() = currentValue >= targetValue
@@ -46,10 +49,45 @@ data class Habit(
       ((currentValue.toFloat() / targetValue.toFloat()) * 100).toInt()
     }
 
+  val isCurrentlyPaused: Boolean
+    get() {
+      if (!isPaused) return false
+      val until = pauseUntilDate ?: return true
+      return System.currentTimeMillis() < until
+    }
+
+  val pauseRemainingDays: Int?
+    get() {
+      if (!isCurrentlyPaused) return null
+      val until = pauseUntilDate ?: return null
+      val diffMs = until - System.currentTimeMillis()
+      if (diffMs <= 0) return 0
+      return Math.ceil(diffMs.toDouble() / (1000.0 * 60 * 60 * 24)).toInt()
+    }
+
+  val pauseStatusDescription: String?
+    get() {
+      if (!isCurrentlyPaused) return null
+      val days = pauseRemainingDays
+      return if (days == null) {
+        "مركونة مؤقتاً حتى الاستئناف يدوياً ⏸️"
+      } else {
+        val daysWord = when {
+          days == 1 -> "يوم واحد"
+          days == 2 -> "يومان"
+          days in 3..10 -> "$days أيام"
+          else -> "$days يوماً"
+        }
+        "مركونة مؤقتاً (متبقي $daysWord) ⏸️"
+      }
+    }
+
   fun isScheduledForToday(todayDayOfWeek: DayOfWeekArabic): Boolean {
+    // If the habit is paused / frozen, it does NOT appear on the Home dashboard
+    if (isCurrentlyPaused) return false
     return when (frequency) {
       HabitFrequency.DAILY -> true
-      HabitFrequency.SPECIFIC_DAYS -> scheduledDays.isEmpty() || scheduledDays.contains(todayDayOfWeek)
+      HabitFrequency.SPECIFIC_DAYS -> scheduledDays.isNotEmpty() && scheduledDays.contains(todayDayOfWeek)
     }
   }
 
@@ -57,7 +95,7 @@ data class Habit(
     get() = when (frequency) {
       HabitFrequency.DAILY -> "يومياً"
       HabitFrequency.SPECIFIC_DAYS -> {
-        if (scheduledDays.isEmpty()) "يومياً"
+        if (scheduledDays.isEmpty()) "غير محدد"
         else scheduledDays.joinToString("، ") { it.shortArabic }
       }
     }

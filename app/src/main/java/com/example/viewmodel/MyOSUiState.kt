@@ -17,9 +17,24 @@ enum class GoalFilter(val titleArabic: String) {
 
 enum class HabitFilter(val titleArabic: String) {
   TODAY("اليوم"),
-  ALL("كل العادات"),
+  ALL("الكل"),
   MANDATORY("إجبارية 🛡️"),
-  SCHEDULED("دورية 📅")
+  SCHEDULED("دورية 📅"),
+  PAUSED("مركونة ⏸️")
+}
+
+enum class TaskFilter(val titleArabic: String) {
+  ALL("الكل"),
+  TODAY("اليوم ⚡"),
+  UPCOMING("قريباً / غداً 📅"),
+  NO_DATE("بدون موعد 📭"),
+  COMPLETED("المكتملة ✅")
+}
+
+enum class TaskSortOrder(val titleArabic: String) {
+  PRIORITY("حسب الأولوية"),
+  NEWEST("الأحدث أولاً"),
+  OLDEST("الأقدم أولاً")
 }
 
 data class MyOSUiState(
@@ -32,16 +47,21 @@ data class MyOSUiState(
   val selectedGoalId: String? = null,
   val activeGoalFilter: GoalFilter = GoalFilter.ALL,
   val activeHabitFilter: HabitFilter = HabitFilter.TODAY,
+  val activeTaskFilter: TaskFilter = TaskFilter.ALL,
+  val taskSortOrder: TaskSortOrder = TaskSortOrder.PRIORITY,
   val isCreateGoalSheetVisible: Boolean = false,
   val editingGoal: Goal? = null,
   val isCreateHabitSheetVisible: Boolean = false,
   val editingHabit: Habit? = null,
+  val isCreateTaskSheetVisible: Boolean = false,
+  val editingGeneralTask: Task? = null,
   val isAddGoalTaskDialogVisible: Boolean = false,
   val editingGoalTask: Task? = null,
   val isQuickAddSheetVisible: Boolean = false,
   val activeCreationDialog: QuickAddType? = null,
   val isEditNameDialogVisible: Boolean = false,
   val selectedHabitToLog: Habit? = null,
+  val selectedHabitToPause: Habit? = null,
   val notificationMessage: String? = null
 ) {
   val selectedGoal: Goal?
@@ -61,8 +81,38 @@ data class MyOSUiState(
       return when (activeHabitFilter) {
         HabitFilter.TODAY -> habits.filter { it.isScheduledForToday(todayDay) }
         HabitFilter.ALL -> habits
-        HabitFilter.MANDATORY -> habits.filter { it.isMandatory }
-        HabitFilter.SCHEDULED -> habits.filter { it.frequency == com.example.model.HabitFrequency.SPECIFIC_DAYS }
+        HabitFilter.MANDATORY -> habits.filter { it.isMandatory && !it.isCurrentlyPaused }
+        HabitFilter.SCHEDULED -> habits.filter { it.frequency == com.example.model.HabitFrequency.SPECIFIC_DAYS && !it.isCurrentlyPaused }
+        HabitFilter.PAUSED -> habits.filter { it.isCurrentlyPaused }
+      }
+    }
+
+  val filteredGeneralTasks: List<Task>
+    get() {
+      val base = when (activeTaskFilter) {
+        TaskFilter.ALL -> generalTasks.filter { !it.isGoalTask }
+        TaskFilter.TODAY -> generalTasks.filter { !it.isGoalTask && it.isDueToday }
+        TaskFilter.UPCOMING -> generalTasks.filter {
+          !it.isGoalTask && (it.schedule == com.example.model.TaskSchedule.TOMORROW || it.schedule == com.example.model.TaskSchedule.FUTURE) && !it.isDueToday
+        }
+        TaskFilter.NO_DATE -> generalTasks.filter { !it.isGoalTask && it.schedule == com.example.model.TaskSchedule.NO_DATE }
+        TaskFilter.COMPLETED -> generalTasks.filter { !it.isGoalTask && it.isCompleted }
+      }
+
+      return when (taskSortOrder) {
+        TaskSortOrder.PRIORITY -> base.sortedWith(
+          compareBy<Task> { it.isCompleted }
+            .thenBy { it.priority.rank }
+            .thenByDescending { it.createdAt }
+        )
+        TaskSortOrder.NEWEST -> base.sortedWith(
+          compareBy<Task> { it.isCompleted }
+            .thenByDescending { it.createdAt }
+        )
+        TaskSortOrder.OLDEST -> base.sortedWith(
+          compareBy<Task> { it.isCompleted }
+            .thenBy { it.createdAt }
+        )
       }
     }
 }

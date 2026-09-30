@@ -20,6 +20,7 @@ import com.example.ui.screens.GoalsScreen
 import com.example.ui.screens.HabitsScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.PlaceholderScreen
+import com.example.ui.screens.TasksScreen
 import com.example.ui.theme.BackgroundLight
 import com.example.ui.theme.MyApplicationTheme
 import com.example.viewmodel.MyOSViewModel
@@ -102,7 +103,13 @@ fun MyOSApp(viewModel: MyOSViewModel) {
           onToggleHabitBoolean = viewModel::toggleHabitBoolean,
           onToggleTask = viewModel::toggleGeneralTask,
           onToggleGoalTask = viewModel::toggleGoalTask,
-          onDismissNotification = viewModel::dismissNotification
+          onDismissNotification = viewModel::dismissNotification,
+          onCloseCreateTask = viewModel::closeCreateTaskSheet,
+          onSaveGeneralTask = viewModel::saveGeneralTask,
+          onCloseCreateGoal = viewModel::closeCreateGoalSheet,
+          onSaveGoalFull = viewModel::saveGoal,
+          onCloseCreateHabit = viewModel::closeCreateHabitSheet,
+          onSaveHabitFull = viewModel::saveHabit
         )
       }
       ScreenDestination.GOALS -> {
@@ -135,6 +142,26 @@ fun MyOSApp(viewModel: MyOSViewModel) {
           onCloseLogHabitDialog = viewModel::closeLogHabitDialog,
           onSaveHabitProgress = viewModel::updateHabitProgress,
           onToggleHabitBoolean = viewModel::toggleHabitBoolean,
+          onOpenPauseHabitDialog = viewModel::openPauseHabitDialog,
+          onClosePauseHabitDialog = viewModel::closePauseHabitDialog,
+          onConfirmPauseHabit = viewModel::pauseHabit,
+          onResumeHabit = viewModel::resumeHabit,
+          onDismissNotification = viewModel::dismissNotification
+        )
+      }
+      ScreenDestination.TASKS -> {
+        TasksScreen(
+          uiState = uiState,
+          onScreenSelected = viewModel::onScreenSelected,
+          onToggleRestMode = viewModel::onToggleRestMode,
+          onSetTaskFilter = viewModel::setTaskFilter,
+          onSetTaskSortOrder = viewModel::setTaskSortOrder,
+          onOpenCreateTask = viewModel::openCreateTaskSheet,
+          onOpenEditTask = viewModel::openEditTask,
+          onCloseCreateTask = viewModel::closeCreateTaskSheet,
+          onSaveTask = viewModel::saveGeneralTask,
+          onDeleteTask = viewModel::deleteGeneralTask,
+          onToggleTask = viewModel::toggleGeneralTask,
           onDismissNotification = viewModel::dismissNotification
         )
       }

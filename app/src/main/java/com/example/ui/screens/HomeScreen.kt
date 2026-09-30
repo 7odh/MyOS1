@@ -35,11 +35,18 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.model.DayOfWeekArabic
 import com.example.model.Habit
+import com.example.model.HabitFrequency
+import com.example.model.HabitType
 import com.example.model.Priority
 import com.example.model.QuickAddType
 import com.example.model.ScreenDestination
+import com.example.model.TaskSchedule
 import com.example.ui.components.AddItemDialog
+import com.example.ui.components.CreateGoalBottomSheet
+import com.example.ui.components.CreateHabitBottomSheet
+import com.example.ui.components.CreateTaskBottomSheet
 import com.example.ui.components.DailySummarySection
 import com.example.ui.components.EditNameDialog
 import com.example.ui.components.LogHabitProgressDialog
@@ -82,6 +89,34 @@ fun HomeScreen(
   onToggleTask: (String) -> Unit,
   onToggleGoalTask: (String, String) -> Unit,
   onDismissNotification: () -> Unit,
+  onCloseCreateTask: () -> Unit = {},
+  onSaveGeneralTask: (
+    title: String,
+    notes: String?,
+    priority: Priority,
+    schedule: TaskSchedule,
+    dueDateFormatted: String?
+  ) -> Unit = { _, _, _, _, _ -> },
+  onCloseCreateGoal: () -> Unit = {},
+  onSaveGoalFull: (
+    title: String,
+    description: String?,
+    iconId: String,
+    priority: Priority,
+    dueDate: String?
+  ) -> Unit = { _, _, _, _, _ -> },
+  onCloseCreateHabit: () -> Unit = {},
+  onSaveHabitFull: (
+    title: String,
+    type: HabitType,
+    targetValue: Int,
+    unit: String,
+    frequency: HabitFrequency,
+    scheduledDays: List<DayOfWeekArabic>,
+    isMandatory: Boolean,
+    priority: Priority,
+    iconEmoji: String
+  ) -> Unit = { _, _, _, _, _, _, _, _, _ -> },
   modifier: Modifier = Modifier
 ) {
   val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -205,6 +240,9 @@ fun HomeScreen(
             onToggleGoalTask = onToggleGoalTask,
             onViewAllClick = {
               onScreenSelected(ScreenDestination.GOALS)
+            },
+            onNavigateToTasks = {
+              onScreenSelected(ScreenDestination.TASKS)
             }
           )
 
@@ -249,6 +287,36 @@ fun HomeScreen(
       onSaveProgress = { newTotal ->
         onSaveHabitProgress(habitToLog.id, newTotal)
       }
+    )
+  }
+
+  // Create Task Bottom Sheet (from Quick Add)
+  if (uiState.isCreateTaskSheetVisible) {
+    CreateTaskBottomSheet(
+      isVisible = true,
+      editingTask = uiState.editingGeneralTask,
+      onDismiss = onCloseCreateTask,
+      onSaveTask = onSaveGeneralTask
+    )
+  }
+
+  // Create Goal Bottom Sheet (from Quick Add)
+  if (uiState.isCreateGoalSheetVisible) {
+    CreateGoalBottomSheet(
+      isVisible = true,
+      editingGoal = uiState.editingGoal,
+      onDismiss = onCloseCreateGoal,
+      onSaveGoal = onSaveGoalFull
+    )
+  }
+
+  // Create Habit Bottom Sheet (from Quick Add)
+  if (uiState.isCreateHabitSheetVisible) {
+    CreateHabitBottomSheet(
+      isVisible = true,
+      editingHabit = uiState.editingHabit,
+      onDismiss = onCloseCreateHabit,
+      onSaveHabit = onSaveHabitFull
     )
   }
 }

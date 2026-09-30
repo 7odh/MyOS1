@@ -19,15 +19,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.LocalFireDepartment
+import androidx.compose.material.icons.outlined.PauseCircleOutline
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -64,14 +67,18 @@ fun HabitDetailCard(
   onToggleBoolean: () -> Unit,
   onEditHabit: () -> Unit,
   onDeleteHabit: () -> Unit,
+  onOpenPauseDialog: () -> Unit = {},
+  onResumeHabit: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val isCompleted = habit.isCompleted
   val isExceeded = habit.currentValue > habit.targetValue
   val isOnRestToday = isRestModeActive && !habit.isMandatory
+  val isPaused = habit.isCurrentlyPaused
 
   val cardBorderColor by animateColorAsState(
     targetValue = when {
+      isPaused -> Color(0xFFF59E0B).copy(alpha = 0.5f)
       isCompleted -> HabitEmerald.copy(alpha = 0.5f)
       isOnRestToday -> Color(0xFFD97706).copy(alpha = 0.3f)
       else -> BorderLight.copy(alpha = 0.8f)
@@ -88,6 +95,7 @@ fun HabitDetailCard(
     shape = RoundedCornerShape(20.dp),
     colors = CardDefaults.cardColors(
       containerColor = when {
+        isPaused -> Color(0xFFFFFDF5)
         isCompleted -> Color(0xFFF9FDFB)
         isOnRestToday -> Color(0xFFFFFDF5)
         else -> SurfaceCard
@@ -100,7 +108,7 @@ fun HabitDetailCard(
         .fillMaxWidth()
         .padding(16.dp)
     ) {
-      // 1. Top row: Icon, Title, Edit & Delete Actions
+      // 1. Top row: Icon, Title, Pause, Edit & Delete Actions
       Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -164,8 +172,57 @@ fun HabitDetailCard(
           }
         }
 
-        // Action buttons: Edit & Delete
+        // Action buttons: Pause/Resume, Edit, Delete
         Row(verticalAlignment = Alignment.CenterVertically) {
+          if (isPaused) {
+            // Resume Action
+            Box(
+              modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color(0xFFDCFCE7))
+                .clickable(onClick = onResumeHabit)
+                .padding(horizontal = 8.dp, vertical = 5.dp),
+              contentAlignment = Alignment.Center
+            ) {
+              Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                  imageVector = Icons.Default.PlayArrow,
+                  contentDescription = "استئناف",
+                  tint = HabitEmerald,
+                  modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(3.dp))
+                Text(
+                  text = "استئناف",
+                  style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp
+                  ),
+                  color = HabitEmerald
+                )
+              }
+            }
+          } else {
+            // Pause Action
+            Box(
+              modifier = Modifier
+                .size(30.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFFEF3C7))
+                .clickable(onClick = onOpenPauseDialog),
+              contentAlignment = Alignment.Center
+            ) {
+              Icon(
+                imageVector = Icons.Outlined.PauseCircleOutline,
+                contentDescription = "ركن العادة مؤقتاً",
+                tint = Color(0xFFD97706),
+                modifier = Modifier.size(16.dp)
+              )
+            }
+          }
+
+          Spacer(modifier = Modifier.width(6.dp))
+
           Box(
             modifier = Modifier
               .size(30.dp)
@@ -202,6 +259,60 @@ fun HabitDetailCard(
         }
       }
 
+      // Paused Banner if habit is currently paused
+      if (isPaused) {
+        Spacer(modifier = Modifier.height(10.dp))
+        Box(
+          modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xFFFEF3C7))
+            .border(1.dp, Color(0xFFF59E0B).copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 10.dp, vertical = 7.dp)
+        ) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Row(
+              modifier = Modifier.weight(1f),
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Icon(
+                imageVector = Icons.Outlined.PauseCircleOutline,
+                contentDescription = null,
+                tint = Color(0xFFB45309),
+                modifier = Modifier.size(16.dp)
+              )
+              Spacer(modifier = Modifier.width(6.dp))
+              Text(
+                text = habit.pauseStatusDescription ?: "العادة مركونة مؤقتاً لتخفيف الضغوط",
+                style = MaterialTheme.typography.bodySmall.copy(
+                  fontWeight = FontWeight.Bold,
+                  fontSize = 11.sp
+                ),
+                color = Color(0xFF92400E)
+              )
+            }
+
+            TextButton(
+              onClick = onResumeHabit,
+              contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+            ) {
+              Text(
+                text = "استئناف الآن ▶️",
+                style = MaterialTheme.typography.labelSmall.copy(
+                  fontWeight = FontWeight.Bold,
+                  fontSize = 11.sp
+                ),
+                color = Color(0xFFB45309)
+              )
+            }
+          }
+        }
+      }
+
       Spacer(modifier = Modifier.height(12.dp))
 
       // 2. Badges Row: Type badge, Mandatory badge or Rest day badge, Priority badge
@@ -224,8 +335,24 @@ fun HabitDetailCard(
           )
         }
 
-        // Mandatory vs Rest Mode Badge
-        if (habit.isMandatory) {
+        // Mandatory vs Rest Mode vs Paused Badge
+        if (isPaused) {
+          Box(
+            modifier = Modifier
+              .clip(RoundedCornerShape(8.dp))
+              .background(Color(0xFFFEF3C7))
+              .padding(horizontal = 7.dp, vertical = 3.dp)
+          ) {
+            Text(
+              text = "مركونة ⏸️",
+              style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold
+              ),
+              color = Color(0xFFB45309)
+            )
+          }
+        } else if (habit.isMandatory) {
           Box(
             modifier = Modifier
               .clip(RoundedCornerShape(8.dp))
@@ -290,8 +417,9 @@ fun HabitDetailCard(
         verticalAlignment = Alignment.CenterVertically
       ) {
         // Progress text
-        val progressText = when (habit.type) {
-          HabitType.BOOLEAN -> if (isCompleted) "مكتملة اليوم ✨" else "لم تكتمل بعد"
+        val progressText = when {
+          isPaused -> "العادة مركونة مؤقتاً"
+          habit.type == HabitType.BOOLEAN -> if (isCompleted) "مكتملة اليوم ✨" else "لم تكتمل بعد"
           else -> "${habit.currentValue} من ${habit.targetValue} ${habit.unit}"
         }
 
@@ -312,6 +440,7 @@ fun HabitDetailCard(
                 fontSize = 12.sp
               ),
               color = when {
+                isPaused -> Color(0xFFB45309)
                 isExceeded -> HabitEmerald
                 isCompleted -> HabitEmerald
                 else -> BrightBlue
@@ -339,99 +468,133 @@ fun HabitDetailCard(
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        // Interaction Button based on habit type
-        when (habit.type) {
-          HabitType.COUNTER -> {
-            Box(
-              modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
-                .background(if (isCompleted) HabitEmeraldBg else Color(0xFFEFF6FF))
-                .border(
-                  width = 1.dp,
-                  color = if (isCompleted) HabitEmerald.copy(alpha = 0.5f) else BrightBlue.copy(alpha = 0.3f),
-                  shape = RoundedCornerShape(12.dp)
-                )
-                .clickable(onClick = onIncrementCounter)
-                .padding(horizontal = 14.dp, vertical = 8.dp),
-              contentAlignment = Alignment.Center
-            ) {
-              Row(verticalAlignment = Alignment.CenterVertically) {
+        // Interaction Button based on habit type (or Resume button if paused)
+        if (isPaused) {
+          Box(
+            modifier = Modifier
+              .clip(RoundedCornerShape(12.dp))
+              .background(Color(0xFFDCFCE7))
+              .border(
+                width = 1.dp,
+                color = HabitEmerald.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(12.dp)
+              )
+              .clickable(onClick = onResumeHabit)
+              .padding(horizontal = 12.dp, vertical = 8.dp),
+            contentAlignment = Alignment.Center
+          ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Icon(
+                imageVector = Icons.Default.PlayArrow,
+                contentDescription = null,
+                tint = HabitEmerald,
+                modifier = Modifier.size(15.dp)
+              )
+              Spacer(modifier = Modifier.width(4.dp))
+              Text(
+                text = "استئناف",
+                style = MaterialTheme.typography.labelMedium.copy(
+                  fontWeight = FontWeight.Bold,
+                  fontSize = 11.sp
+                ),
+                color = HabitEmerald
+              )
+            }
+          }
+        } else {
+          when (habit.type) {
+            HabitType.COUNTER -> {
+              Box(
+                modifier = Modifier
+                  .clip(RoundedCornerShape(12.dp))
+                  .background(if (isCompleted) HabitEmeraldBg else Color(0xFFEFF6FF))
+                  .border(
+                    width = 1.dp,
+                    color = if (isCompleted) HabitEmerald.copy(alpha = 0.5f) else BrightBlue.copy(alpha = 0.3f),
+                    shape = RoundedCornerShape(12.dp)
+                  )
+                  .clickable(onClick = onIncrementCounter)
+                  .padding(horizontal = 14.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center
+              ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                  if (isCompleted) {
+                    Icon(
+                      imageVector = Icons.Default.Check,
+                      contentDescription = null,
+                      tint = HabitEmerald,
+                      modifier = Modifier.size(15.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                  }
+                  Text(
+                    text = "+1 ${habit.unit}",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                      fontWeight = FontWeight.Bold,
+                      fontSize = 12.sp
+                    ),
+                    color = if (isCompleted) HabitEmerald else BrightBlue
+                  )
+                }
+              }
+            }
+            HabitType.QUANTITY, HabitType.DURATION -> {
+              Box(
+                modifier = Modifier
+                  .clip(RoundedCornerShape(12.dp))
+                  .background(if (isCompleted) HabitEmeraldBg else Color(0xFFEFF6FF))
+                  .border(
+                    width = 1.dp,
+                    color = if (isCompleted) HabitEmerald.copy(alpha = 0.5f) else BrightBlue.copy(alpha = 0.3f),
+                    shape = RoundedCornerShape(12.dp)
+                  )
+                  .clickable(onClick = onOpenLogDialog)
+                  .padding(horizontal = 12.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center
+              ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                  if (isCompleted) {
+                    Icon(
+                      imageVector = Icons.Default.Check,
+                      contentDescription = null,
+                      tint = HabitEmerald,
+                      modifier = Modifier.size(15.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                  }
+                  Text(
+                    text = if (habit.type == HabitType.DURATION) "تسجيل وقت" else "تسجيل إنجاز",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                      fontWeight = FontWeight.Bold,
+                      fontSize = 11.sp
+                    ),
+                    color = if (isCompleted) HabitEmerald else BrightBlue
+                  )
+                }
+              }
+            }
+            HabitType.BOOLEAN -> {
+              Box(
+                modifier = Modifier
+                  .size(32.dp)
+                  .clip(CircleShape)
+                  .background(if (isCompleted) HabitEmerald else Color.Transparent)
+                  .border(
+                    1.5.dp,
+                    if (isCompleted) HabitEmerald else BorderLight,
+                    CircleShape
+                  )
+                  .clickable(onClick = onToggleBoolean),
+                contentAlignment = Alignment.Center
+              ) {
                 if (isCompleted) {
                   Icon(
                     imageVector = Icons.Default.Check,
-                    contentDescription = null,
-                    tint = HabitEmerald,
-                    modifier = Modifier.size(15.dp)
+                    contentDescription = "مكتملة",
+                    tint = TextWhite,
+                    modifier = Modifier.size(18.dp)
                   )
-                  Spacer(modifier = Modifier.width(4.dp))
                 }
-                Text(
-                  text = "+1 ${habit.unit}",
-                  style = MaterialTheme.typography.labelMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
-                  ),
-                  color = if (isCompleted) HabitEmerald else BrightBlue
-                )
-              }
-            }
-          }
-          HabitType.QUANTITY, HabitType.DURATION -> {
-            Box(
-              modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
-                .background(if (isCompleted) HabitEmeraldBg else Color(0xFFEFF6FF))
-                .border(
-                  width = 1.dp,
-                  color = if (isCompleted) HabitEmerald.copy(alpha = 0.5f) else BrightBlue.copy(alpha = 0.3f),
-                  shape = RoundedCornerShape(12.dp)
-                )
-                .clickable(onClick = onOpenLogDialog)
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-              contentAlignment = Alignment.Center
-            ) {
-              Row(verticalAlignment = Alignment.CenterVertically) {
-                if (isCompleted) {
-                  Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = null,
-                    tint = HabitEmerald,
-                    modifier = Modifier.size(15.dp)
-                  )
-                  Spacer(modifier = Modifier.width(4.dp))
-                }
-                Text(
-                  text = if (habit.type == HabitType.DURATION) "تسجيل وقت" else "تسجيل إنجاز",
-                  style = MaterialTheme.typography.labelMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp
-                  ),
-                  color = if (isCompleted) HabitEmerald else BrightBlue
-                )
-              }
-            }
-          }
-          HabitType.BOOLEAN -> {
-            Box(
-              modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .background(if (isCompleted) HabitEmerald else Color.Transparent)
-                .border(
-                  1.5.dp,
-                  if (isCompleted) HabitEmerald else BorderLight,
-                  CircleShape
-                )
-                .clickable(onClick = onToggleBoolean),
-              contentAlignment = Alignment.Center
-            ) {
-              if (isCompleted) {
-                Icon(
-                  imageVector = Icons.Default.Check,
-                  contentDescription = "مكتملة",
-                  tint = TextWhite,
-                  modifier = Modifier.size(18.dp)
-                )
               }
             }
           }

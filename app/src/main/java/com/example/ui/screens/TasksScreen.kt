@@ -24,10 +24,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.Coffee
+import androidx.compose.material.icons.outlined.CheckBox
 import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.outlined.Spa
+import androidx.compose.material.icons.outlined.Inbox
+import androidx.compose.material.icons.outlined.Sort
+import androidx.compose.material.icons.outlined.Today
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -63,66 +64,53 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.model.DayOfWeekArabic
-import com.example.model.Habit
-import com.example.model.HabitFrequency
-import com.example.model.HabitType
 import com.example.model.Priority
 import com.example.model.ScreenDestination
-import com.example.ui.components.CreateHabitBottomSheet
-import com.example.ui.components.HabitDetailCard
-import com.example.ui.components.LogHabitProgressDialog
-import com.example.ui.components.PauseHabitDialog
+import com.example.model.Task
+import com.example.model.TaskSchedule
+import com.example.ui.components.CreateTaskBottomSheet
 import com.example.ui.components.MyOSBottomNavigationBar
 import com.example.ui.components.MyOSHeader
 import com.example.ui.components.NavigationDrawerContent
+import com.example.ui.components.TaskDetailCard
 import com.example.ui.theme.BackgroundLight
 import com.example.ui.theme.BorderLight
 import com.example.ui.theme.BrightBlue
 import com.example.ui.theme.DeepBlue
 import com.example.ui.theme.ElectricViolet
 import com.example.ui.theme.HabitEmerald
-import com.example.ui.theme.HabitEmeraldBg
 import com.example.ui.theme.SurfaceCard
 import com.example.ui.theme.SurfaceWhite
+import com.example.ui.theme.TaskViolet
+import com.example.ui.theme.TaskVioletBg
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TextWhite
-import com.example.viewmodel.HabitFilter
 import com.example.viewmodel.MyOSUiState
+import com.example.viewmodel.TaskFilter
+import com.example.viewmodel.TaskSortOrder
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HabitsScreen(
+fun TasksScreen(
   uiState: MyOSUiState,
   onScreenSelected: (ScreenDestination) -> Unit,
   onToggleRestMode: () -> Unit,
-  onSetHabitFilter: (HabitFilter) -> Unit,
-  onOpenCreateHabit: () -> Unit,
-  onOpenEditHabit: (Habit) -> Unit,
-  onCloseCreateHabit: () -> Unit,
-  onSaveHabit: (
+  onSetTaskFilter: (TaskFilter) -> Unit,
+  onSetTaskSortOrder: (TaskSortOrder) -> Unit,
+  onOpenCreateTask: () -> Unit,
+  onOpenEditTask: (Task) -> Unit,
+  onCloseCreateTask: () -> Unit,
+  onSaveTask: (
     title: String,
-    type: HabitType,
-    targetValue: Int,
-    unit: String,
-    frequency: HabitFrequency,
-    scheduledDays: List<DayOfWeekArabic>,
-    isMandatory: Boolean,
+    notes: String?,
     priority: Priority,
-    iconEmoji: String
+    schedule: TaskSchedule,
+    dueDateFormatted: String?
   ) -> Unit,
-  onDeleteHabit: (String) -> Unit,
-  onIncrementHabit: (String) -> Unit,
-  onOpenLogHabitDialog: (Habit) -> Unit,
-  onCloseLogHabitDialog: () -> Unit,
-  onSaveHabitProgress: (String, Int) -> Unit,
-  onToggleHabitBoolean: (String) -> Unit,
-  onOpenPauseHabitDialog: (Habit) -> Unit,
-  onClosePauseHabitDialog: () -> Unit,
-  onConfirmPauseHabit: (String, Int?) -> Unit,
-  onResumeHabit: (String) -> Unit,
+  onDeleteTask: (String) -> Unit,
+  onToggleTask: (String) -> Unit,
   onDismissNotification: () -> Unit,
   modifier: Modifier = Modifier
 ) {
@@ -133,7 +121,7 @@ fun HabitsScreen(
   val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
   val scope = rememberCoroutineScope()
   val snackbarHostState = remember { SnackbarHostState() }
-  var habitToDelete by remember { mutableStateOf<Habit?>(null) }
+  var taskToDelete by remember { mutableStateOf<Task?>(null) }
 
   LaunchedEffect(uiState.notificationMessage) {
     uiState.notificationMessage?.let { msg ->
@@ -179,7 +167,7 @@ fun HabitsScreen(
       },
       floatingActionButton = {
         FloatingActionButton(
-          onClick = onOpenCreateHabit,
+          onClick = onOpenCreateTask,
           shape = CircleShape,
           containerColor = Color.Transparent,
           elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
@@ -189,7 +177,7 @@ fun HabitsScreen(
             .background(
               brush = Brush.linearGradient(
                 colors = listOf(
-                  HabitEmerald,
+                  TaskViolet,
                   BrightBlue,
                   ElectricViolet
                 )
@@ -199,7 +187,7 @@ fun HabitsScreen(
         ) {
           Icon(
             imageVector = Icons.Default.Add,
-            contentDescription = "إضافة عادة",
+            contentDescription = "إضافة مهمة جديدة",
             tint = TextWhite,
             modifier = Modifier.size(28.dp)
           )
@@ -248,20 +236,20 @@ fun HabitsScreen(
                     modifier = Modifier
                       .size(38.dp)
                       .clip(CircleShape)
-                      .background(HabitEmeraldBg),
+                      .background(TaskVioletBg),
                     contentAlignment = Alignment.Center
                   ) {
                     Icon(
-                      imageVector = Icons.Outlined.Spa,
-                      contentDescription = "العادات",
-                      tint = HabitEmerald,
+                      imageVector = Icons.Outlined.CheckBox,
+                      contentDescription = "المهام",
+                      tint = TaskViolet,
                       modifier = Modifier.size(22.dp)
                     )
                   }
                   Spacer(modifier = Modifier.width(10.dp))
                   Column {
                     Text(
-                      text = "العادات والروتين",
+                      text = "المهام وقائمة الإنجاز",
                       style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
@@ -269,7 +257,7 @@ fun HabitsScreen(
                       color = TextPrimary
                     )
                     Text(
-                      text = "بناء الانضباط اليومي والأسبوعي",
+                      text = "إدارة وتنظيم المهام اليومية والمؤجلة",
                       style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                       color = TextSecondary
                     )
@@ -277,8 +265,8 @@ fun HabitsScreen(
                 }
 
                 Button(
-                  onClick = onOpenCreateHabit,
-                  colors = ButtonDefaults.buttonColors(containerColor = HabitEmerald),
+                  onClick = onOpenCreateTask,
+                  colors = ButtonDefaults.buttonColors(containerColor = TaskViolet),
                   shape = RoundedCornerShape(12.dp),
                   contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                 ) {
@@ -289,47 +277,44 @@ fun HabitsScreen(
                     modifier = Modifier.size(16.dp)
                   )
                   Spacer(modifier = Modifier.width(4.dp))
-                  Text(text = "عادة جديدة", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                  Text(text = "مهمة جديدة", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
               }
 
               Spacer(modifier = Modifier.height(16.dp))
 
               // Stat metrics cards
-              val todayHabits = uiState.habits.filter {
-                it.isScheduledForToday(com.example.model.getCurrentDayOfWeekArabic())
-              }
-              val completedTodayCount = todayHabits.count { it.isCompleted }
-              val mandatoryCount = uiState.habits.count { it.isMandatory }
+              val generalTasks = uiState.generalTasks.filter { !it.isGoalTask }
+              val totalCount = generalTasks.size
+              val completedCount = generalTasks.count { it.isCompleted }
+              val todayCount = generalTasks.count { it.schedule == TaskSchedule.TODAY }
+              val noDateCount = generalTasks.count { it.schedule == TaskSchedule.NO_DATE }
 
               Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
               ) {
-                // Metric 1: Today completed
-                HabitMetricMiniBox(
-                  icon = Icons.Outlined.CheckCircle,
-                  title = "عادات اليوم",
-                  value = "$completedTodayCount / ${todayHabits.size}",
-                  accentColor = HabitEmerald,
+                TaskMetricBox(
+                  icon = Icons.Outlined.Today,
+                  title = "مهام اليوم ⚡",
+                  value = "$todayCount",
+                  accentColor = TaskViolet,
                   modifier = Modifier.weight(1f)
                 )
 
-                // Metric 2: Mandatory
-                HabitMetricMiniBox(
-                  icon = Icons.Outlined.Shield,
-                  title = "إجبارية",
-                  value = "$mandatoryCount",
+                TaskMetricBox(
+                  icon = Icons.Outlined.Inbox,
+                  title = "بدون موعد 📭",
+                  value = "$noDateCount",
                   accentColor = BrightBlue,
                   modifier = Modifier.weight(1f)
                 )
 
-                // Metric 3: Rest mode status
-                HabitMetricMiniBox(
-                  icon = Icons.Outlined.Coffee,
-                  title = "وضع الراحة",
-                  value = if (uiState.user.isRestModeActive) "مفعّل ☕" else "نشط ⚡",
-                  accentColor = if (uiState.user.isRestModeActive) Color(0xFFD97706) else Color(0xFF6366F1),
+                TaskMetricBox(
+                  icon = Icons.Outlined.CheckCircle,
+                  title = "المكتملة ✅",
+                  value = "$completedCount / $totalCount",
+                  accentColor = HabitEmerald,
                   modifier = Modifier.weight(1f)
                 )
               }
@@ -338,25 +323,25 @@ fun HabitsScreen(
 
           Spacer(modifier = Modifier.height(14.dp))
 
-          // 2. Filter Chips (Scrollable row for all 5 filters)
+          // 2. Filter Chips (Scrollable row)
           Row(
             modifier = Modifier
               .fillMaxWidth()
               .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
           ) {
-            HabitFilter.entries.forEach { filter ->
-              val isSelected = uiState.activeHabitFilter == filter
+            TaskFilter.entries.forEach { filter ->
+              val isSelected = uiState.activeTaskFilter == filter
               Box(
                 modifier = Modifier
                   .clip(RoundedCornerShape(12.dp))
-                  .background(if (isSelected) HabitEmerald else Color(0xFFF1F5F9))
+                  .background(if (isSelected) TaskViolet else Color(0xFFF1F5F9))
                   .border(
                     width = 1.dp,
-                    color = if (isSelected) HabitEmerald else BorderLight,
+                    color = if (isSelected) TaskViolet else BorderLight,
                     shape = RoundedCornerShape(12.dp)
                   )
-                  .clickable { onSetHabitFilter(filter) }
+                  .clickable { onSetTaskFilter(filter) }
                   .padding(horizontal = 14.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center
               ) {
@@ -372,10 +357,65 @@ fun HabitsScreen(
             }
           }
 
-          Spacer(modifier = Modifier.height(14.dp))
+          Spacer(modifier = Modifier.height(10.dp))
 
-          // 3. Habits List
-          val displayList = uiState.filteredHabits
+          // 3. Sorting Row
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Icon(
+                imageVector = Icons.Outlined.Sort,
+                contentDescription = null,
+                tint = TextSecondary,
+                modifier = Modifier.size(16.dp)
+              )
+              Spacer(modifier = Modifier.width(4.dp))
+              Text(
+                text = "الترتيب:",
+                style = MaterialTheme.typography.bodySmall.copy(
+                  fontSize = 12.sp,
+                  fontWeight = FontWeight.Medium
+                ),
+                color = TextSecondary
+              )
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+              TaskSortOrder.entries.forEach { sortOrder ->
+                val isSelected = uiState.taskSortOrder == sortOrder
+                Box(
+                  modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (isSelected) Color(0xFFEDE9FE) else Color(0xFFF8FAFC))
+                    .border(
+                      width = 1.dp,
+                      color = if (isSelected) TaskViolet.copy(alpha = 0.5f) else BorderLight,
+                      shape = RoundedCornerShape(8.dp)
+                    )
+                    .clickable { onSetTaskSortOrder(sortOrder) }
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                  contentAlignment = Alignment.Center
+                ) {
+                  Text(
+                    text = sortOrder.titleArabic,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                      fontSize = 11.sp,
+                      fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                    ),
+                    color = if (isSelected) TaskViolet else TextSecondary
+                  )
+                }
+              }
+            }
+          }
+
+          Spacer(modifier = Modifier.height(12.dp))
+
+          // 4. Tasks List
+          val displayList = uiState.filteredGeneralTasks
 
           if (displayList.isEmpty()) {
             // Empty State
@@ -397,32 +437,32 @@ fun HabitsScreen(
                   modifier = Modifier
                     .size(54.dp)
                     .clip(CircleShape)
-                    .background(HabitEmeraldBg),
+                    .background(TaskVioletBg),
                   contentAlignment = Alignment.Center
                 ) {
                   Icon(
-                    imageVector = Icons.Outlined.Spa,
+                    imageVector = Icons.Outlined.CheckBox,
                     contentDescription = null,
-                    tint = HabitEmerald,
+                    tint = TaskViolet,
                     modifier = Modifier.size(28.dp)
                   )
                 }
                 Spacer(modifier = Modifier.height(14.dp))
                 Text(
-                  text = "لا توجد عادات ضمن هذا التصنيف",
+                  text = "لا توجد مهام ضمن هذا التصنيف",
                   style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                   color = TextPrimary
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                  text = "أضف عاداتك اليومية أو الأسبوعية لتتبع التزامك بسهولة",
+                  text = "أضف مهامك المحددة بتاريخ أو بدون موعد لترتيب أولوياتك",
                   style = MaterialTheme.typography.bodySmall,
                   color = TextSecondary
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
-                  onClick = onOpenCreateHabit,
-                  colors = ButtonDefaults.buttonColors(containerColor = HabitEmerald),
+                  onClick = onOpenCreateTask,
+                  colors = ButtonDefaults.buttonColors(containerColor = TaskViolet),
                   shape = RoundedCornerShape(12.dp)
                 ) {
                   Icon(
@@ -432,24 +472,19 @@ fun HabitsScreen(
                     modifier = Modifier.size(16.dp)
                   )
                   Spacer(modifier = Modifier.width(6.dp))
-                  Text("إضافة عادة جديدة", fontWeight = FontWeight.Bold)
+                  Text("إضافة مهمة جديدة", fontWeight = FontWeight.Bold)
                 }
               }
             }
           } else {
-            displayList.forEach { habit ->
-              HabitDetailCard(
-                habit = habit,
-                isRestModeActive = uiState.user.isRestModeActive,
-                onIncrementCounter = { onIncrementHabit(habit.id) },
-                onOpenLogDialog = { onOpenLogHabitDialog(habit) },
-                onToggleBoolean = { onToggleHabitBoolean(habit.id) },
-                onEditHabit = { onOpenEditHabit(habit) },
-                onDeleteHabit = { habitToDelete = habit },
-                onOpenPauseDialog = { onOpenPauseHabitDialog(habit) },
-                onResumeHabit = { onResumeHabit(habit.id) }
+            displayList.forEach { task ->
+              TaskDetailCard(
+                task = task,
+                onToggle = { onToggleTask(task.id) },
+                onEdit = { onOpenEditTask(task) },
+                onDelete = { taskToDelete = task }
               )
-              Spacer(modifier = Modifier.height(10.dp))
+              Spacer(modifier = Modifier.height(8.dp))
             }
           }
 
@@ -459,46 +494,24 @@ fun HabitsScreen(
     }
   }
 
-  // Create / Edit Habit Bottom Sheet
-  if (uiState.isCreateHabitSheetVisible) {
-    CreateHabitBottomSheet(
+  // Create / Edit Task Bottom Sheet
+  if (uiState.isCreateTaskSheetVisible) {
+    CreateTaskBottomSheet(
       isVisible = true,
-      editingHabit = uiState.editingHabit,
-      onDismiss = onCloseCreateHabit,
-      onSaveHabit = onSaveHabit,
-      onDeleteHabit = { habitId ->
-        onDeleteHabit(habitId)
-        onCloseCreateHabit()
+      editingTask = uiState.editingGeneralTask,
+      onDismiss = onCloseCreateTask,
+      onSaveTask = onSaveTask,
+      onDeleteTask = { taskId ->
+        onDeleteTask(taskId)
+        onCloseCreateTask()
       }
     )
   }
 
-  // Log Habit Progress Dialog (for Quantity & Duration)
-  uiState.selectedHabitToLog?.let { habitToLog ->
-    LogHabitProgressDialog(
-      habit = habitToLog,
-      onDismiss = onCloseLogHabitDialog,
-      onSaveProgress = { newTotal ->
-        onSaveHabitProgress(habitToLog.id, newTotal)
-      }
-    )
-  }
-
-  // Pause Habit Dialog
-  uiState.selectedHabitToPause?.let { habitToPause ->
-    PauseHabitDialog(
-      habit = habitToPause,
-      onDismiss = onClosePauseHabitDialog,
-      onConfirmPause = { days ->
-        onConfirmPauseHabit(habitToPause.id, days)
-      }
-    )
-  }
-
-  // Delete Habit Confirmation Dialog
-  habitToDelete?.let { habit ->
+  // Delete Task Confirmation Dialog
+  taskToDelete?.let { task ->
     AlertDialog(
-      onDismissRequest = { habitToDelete = null },
+      onDismissRequest = { taskToDelete = null },
       shape = RoundedCornerShape(20.dp),
       containerColor = SurfaceWhite,
       title = {
@@ -511,7 +524,7 @@ fun HabitsScreen(
           )
           Spacer(modifier = Modifier.width(8.dp))
           Text(
-            text = "حذف العادة",
+            text = "حذف المهمة",
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
             color = TextPrimary
           )
@@ -519,7 +532,7 @@ fun HabitsScreen(
       },
       text = {
         Text(
-          text = "هل أنت متأكد من رغبتك في حذف عادة \"${habit.title}\"؟ سيتم حذف سجل هذه العادة نهائياً.",
+          text = "هل أنت متأكد من رغبتك في حذف المهمة \"${task.title}\"؟",
           style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
           color = TextSecondary
         )
@@ -527,8 +540,8 @@ fun HabitsScreen(
       confirmButton = {
         Button(
           onClick = {
-            onDeleteHabit(habit.id)
-            habitToDelete = null
+            onDeleteTask(task.id)
+            taskToDelete = null
           },
           colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
           shape = RoundedCornerShape(12.dp)
@@ -537,7 +550,7 @@ fun HabitsScreen(
         }
       },
       dismissButton = {
-        TextButton(onClick = { habitToDelete = null }) {
+        TextButton(onClick = { taskToDelete = null }) {
           Text("إلغاء", color = TextSecondary)
         }
       }
@@ -546,7 +559,7 @@ fun HabitsScreen(
 }
 
 @Composable
-private fun HabitMetricMiniBox(
+private fun TaskMetricBox(
   icon: androidx.compose.ui.graphics.vector.ImageVector,
   title: String,
   value: String,
