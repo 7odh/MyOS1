@@ -114,17 +114,15 @@ fun NavigationDrawerContent(
         .weight(1f)
         .verticalScroll(rememberScrollState())
     ) {
-      // Main destinations
+      // Main destinations (Cleaned: removed inactive Projects and Knowledge until fully designed)
       val mainItems = listOf(
         ScreenDestination.HOME,
         ScreenDestination.GOALS,
         ScreenDestination.HABITS,
         ScreenDestination.TASKS,
         ScreenDestination.CALENDAR,
-        ScreenDestination.PROJECTS,
         ScreenDestination.LISTS,
         ScreenDestination.NOTES,
-        ScreenDestination.KNOWLEDGE,
         ScreenDestination.FOCUS,
         ScreenDestination.ANALYTICS,
         ScreenDestination.SEARCH

@@ -15,10 +15,13 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.model.ScreenDestination
+import com.example.ui.screens.CalendarScreen
+import com.example.ui.screens.FocusScreen
 import com.example.ui.screens.GoalDetailsScreen
 import com.example.ui.screens.GoalsScreen
 import com.example.ui.screens.HabitsScreen
 import com.example.ui.screens.HomeScreen
+import com.example.ui.screens.NotesScreen
 import com.example.ui.screens.PlaceholderScreen
 import com.example.ui.screens.TasksScreen
 import com.example.ui.theme.BackgroundLight
@@ -103,6 +106,8 @@ fun MyOSApp(viewModel: MyOSViewModel) {
           onToggleHabitBoolean = viewModel::toggleHabitBoolean,
           onToggleTask = viewModel::toggleGeneralTask,
           onToggleGoalTask = viewModel::toggleGoalTask,
+          onPostponeTask = viewModel::postponeGeneralTask,
+          onPostponeGoalTask = viewModel::postponeGoalTask,
           onDismissNotification = viewModel::dismissNotification,
           onCloseCreateTask = viewModel::closeCreateTaskSheet,
           onSaveGeneralTask = viewModel::saveGeneralTask,
@@ -110,6 +115,20 @@ fun MyOSApp(viewModel: MyOSViewModel) {
           onSaveGoalFull = viewModel::saveGoal,
           onCloseCreateHabit = viewModel::closeCreateHabitSheet,
           onSaveHabitFull = viewModel::saveHabit
+        )
+      }
+      ScreenDestination.CALENDAR -> {
+        CalendarScreen(
+          uiState = uiState,
+          onScreenSelected = viewModel::onScreenSelected,
+          onSelectDate = viewModel::onSelectCalendarDate,
+          onChangeViewMode = viewModel::onChangeCalendarViewMode,
+          onToggleTask = viewModel::toggleGeneralTask,
+          onToggleGoalTask = viewModel::toggleGoalTask,
+          onPostponeTask = viewModel::postponeGeneralTask,
+          onPostponeGoalTask = viewModel::postponeGoalTask,
+          onIncrementHabit = viewModel::incrementHabit,
+          onDismissNotification = viewModel::dismissNotification
         )
       }
       ScreenDestination.GOALS -> {
@@ -162,6 +181,44 @@ fun MyOSApp(viewModel: MyOSViewModel) {
           onSaveTask = viewModel::saveGeneralTask,
           onDeleteTask = viewModel::deleteGeneralTask,
           onToggleTask = viewModel::toggleGeneralTask,
+          onDismissNotification = viewModel::dismissNotification
+        )
+      }
+      ScreenDestination.NOTES -> {
+        NotesScreen(
+          uiState = uiState,
+          onScreenSelected = viewModel::onScreenSelected,
+          onOpenCreateNote = viewModel::openCreateNoteSheet,
+          onOpenEditNote = viewModel::openEditNote,
+          onCloseCreateNote = viewModel::closeCreateNoteSheet,
+          onSaveNote = viewModel::saveNote,
+          onTogglePinNote = viewModel::togglePinNote,
+          onDeleteNote = viewModel::deleteNote,
+          onSetActiveTag = viewModel::setActiveNoteTag,
+          onSetSearchQuery = viewModel::setNoteSearchQuery,
+          onConvertToGoal = viewModel::convertNoteToGoal,
+          onConvertToHabit = viewModel::convertNoteToHabit,
+          onConvertToTask = viewModel::convertNoteToTask,
+          onDismissNotification = viewModel::dismissNotification
+        )
+      }
+      ScreenDestination.FOCUS -> {
+        FocusScreen(
+          uiState = uiState,
+          onScreenSelected = viewModel::onScreenSelected,
+          onToggleRestMode = viewModel::onToggleRestMode,
+          onSetFocusMode = viewModel::setFocusMode,
+          onSetFocusDurationMinutes = viewModel::setFocusDurationMinutes,
+          onStartTimer = viewModel::startFocusTimer,
+          onPauseTimer = viewModel::pauseFocusTimer,
+          onResetTimer = viewModel::resetFocusTimer,
+          onFinishEarly = viewModel::finishEarlyAndRecordProgress,
+          onSetAttachment = viewModel::setFocusAttachment,
+          onClearAttachment = viewModel::clearFocusAttachment,
+          onSelectSound = viewModel::setAmbientSound,
+          onToggleAttachPicker = viewModel::toggleAttachPicker,
+          onToggleCustomDurationDialog = viewModel::toggleCustomDurationDialog,
+          onToggleFlipClockFullScreen = viewModel::toggleFlipClockFullScreen,
           onDismissNotification = viewModel::dismissNotification
         )
       }

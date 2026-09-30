@@ -64,6 +64,8 @@ fun TodaySection(
   onToggleHabitBoolean: (String) -> Unit,
   onToggleTask: (String) -> Unit,
   onToggleGoalTask: (String, String) -> Unit,
+  onPostponeTask: (String) -> Unit = {},
+  onPostponeGoalTask: (String, String) -> Unit = { _, _ -> },
   onViewAllClick: () -> Unit,
   onNavigateToTasks: () -> Unit = {},
   modifier: Modifier = Modifier
@@ -305,7 +307,8 @@ fun TodaySection(
           displayTasks.forEach { task ->
             TaskItemRow(
               task = task,
-              onToggle = { onToggleTask(task.id) }
+              onToggle = { onToggleTask(task.id) },
+              onPostpone = { onPostponeTask(task.id) }
             )
             Spacer(modifier = Modifier.height(4.dp))
           }
@@ -392,6 +395,9 @@ fun TodaySection(
               },
               onToggleGoalTask = { taskId ->
                 onToggleGoalTask(goal.id, taskId)
+              },
+              onPostponeGoalTask = { taskId ->
+                onPostponeGoalTask(goal.id, taskId)
               }
             )
             Spacer(modifier = Modifier.height(8.dp))

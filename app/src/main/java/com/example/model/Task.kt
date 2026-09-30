@@ -34,6 +34,9 @@ data class Task(
   val category: String? = null,
   val schedule: TaskSchedule = TaskSchedule.TODAY,
   val dueDateFormatted: String? = null,
+  val isPostponed: Boolean = false,
+  val postponedCount: Int = 0,
+  val postponedFromDate: String? = null,
   val createdAt: Long = System.currentTimeMillis(),
   val completedAt: Long? = null
 ) {

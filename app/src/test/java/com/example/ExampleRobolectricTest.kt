@@ -3,12 +3,18 @@ package com.example
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.MyOSRepository
+import com.example.model.AmbientSoundProvider
+import com.example.model.AmbientSoundType
 import com.example.model.DayOfWeekArabic
+import com.example.model.FocusAttachment
+import com.example.model.FocusAttachType
+import com.example.model.FocusTimerMode
 import com.example.model.GoalStatus
 import com.example.model.HabitFrequency
 import com.example.model.HabitType
 import com.example.model.Priority
 import com.example.model.TaskSchedule
+import com.example.viewmodel.MyOSViewModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -346,5 +352,234 @@ class ExampleRobolectricTest {
     // 5. Delete task
     repository.deleteGeneralTask(updatedTask.id)
     assertFalse(repository.generalTasks.value.any { it.id == updatedTask.id })
+  }
+
+  @Test
+  fun `test postpone task to tomorrow records postponement metadata`() {
+    val repository = MyOSRepository()
+    val todayTask = repository.generalTasks.value.first { it.id == "t1" }
+    assertEquals(TaskSchedule.TODAY, todayTask.schedule)
+    assertFalse(todayTask.isPostponed)
+    assertEquals(0, todayTask.postponedCount)
+
+    // Postpone task t1 to tomorrow
+    repository.postponeGeneralTask("t1")
+
+    val postponedTask = repository.generalTasks.value.first { it.id == "t1" }
+    assertEquals(TaskSchedule.TOMORROW, postponedTask.schedule)
+    assertTrue(postponedTask.isPostponed)
+    assertEquals(1, postponedTask.postponedCount)
+    assertEquals(com.example.model.getTodayDateString(), postponedTask.postponedFromDate)
+    assertEquals(com.example.model.getTomorrowDateString(), postponedTask.dueDateFormatted)
+
+    // Because it's now TOMORROW, it should no longer be due today on Home screen!
+    assertFalse(postponedTask.isDueToday)
+  }
+
+  @Test
+  fun `test postpone goal task to tomorrow`() {
+    val repository = MyOSRepository()
+    val goal = repository.goals.value.first { it.id == "g1" }
+    val goalTask = goal.tasks.first { it.id == "gt1_1" }
+    assertFalse(goalTask.isPostponed)
+
+    // Postpone goal task gt1_1
+    repository.postponeGoalTask("g1", "gt1_1")
+
+    val updatedGoal = repository.goals.value.first { it.id == "g1" }
+    val updatedGoalTask = updatedGoal.tasks.first { it.id == "gt1_1" }
+    assertTrue(updatedGoalTask.isPostponed)
+    assertEquals(TaskSchedule.TOMORROW, updatedGoalTask.schedule)
+    assertEquals(com.example.model.getTomorrowDateString(), updatedGoalTask.dueDateFormatted)
+  }
+
+  @Test
+  fun `test calendar history retrieval for past day with partial habit completion`() {
+    val repository = MyOSRepository()
+    val yestKey = com.example.data.getDateOffsetKey(-1)
+
+    val yestSummary = repository.getDaySummary(yestKey)
+    assertTrue(yestSummary.isPast)
+    assertFalse(yestSummary.isToday)
+    assertEquals(yestKey, yestSummary.dateKey)
+
+    // Check specific habits requested: Reading 7/10, Gym 0/60 missed, Prayer 5/5 completed
+    val quranHabit = yestSummary.habits.first { it.habitId == "h3" }
+    assertEquals(7, quranHabit.actualValue)
+    assertEquals(10, quranHabit.targetValue)
+    assertFalse(quranHabit.isCompleted)
+    assertEquals("صفحة", quranHabit.unit)
+
+    val gymHabit = yestSummary.habits.first { it.habitId == "h2" }
+    assertEquals(0, gymHabit.actualValue)
+    assertEquals(60, gymHabit.targetValue)
+    assertFalse(gymHabit.isCompleted)
+
+    val prayerHabit = yestSummary.habits.first { it.habitId == "h1" }
+    assertEquals(5, prayerHabit.actualValue)
+    assertEquals(5, prayerHabit.targetValue)
+    assertTrue(prayerHabit.isCompleted)
+
+    // Verify completion rate percentage calculation
+    assertTrue(yestSummary.completionRatePercentage in 1..99)
+    assertTrue(yestSummary.missedItemsCount > 0)
+    assertTrue(yestSummary.completedItemsCount > 0)
+  }
+
+  @Test
+  fun `test calendar live summary for today`() {
+    val repository = MyOSRepository()
+    val todayKey = com.example.model.getTodayDateString()
+
+    val todaySummary = repository.getDaySummary(todayKey)
+    assertTrue(todaySummary.isToday)
+    assertFalse(todaySummary.isPast)
+    assertEquals(todayKey, todaySummary.dateKey)
+    assertTrue(todaySummary.habits.isNotEmpty())
+    assertTrue(todaySummary.tasks.isNotEmpty())
+  }
+
+  @Test
+  fun `test idea inbox note CRUD and pinning`() {
+    val repository = MyOSRepository()
+    val initialNotesCount = repository.notes.value.size
+    assertTrue(initialNotesCount > 0)
+
+    // Add new idea note
+    repository.addNote(
+      title = "فكرة قناة بودكاست صوتية",
+      content = "بودكاست أسبوعي يناقش كتب الإنتاجية وتجارب رواد الأعمال",
+      colorLong = 0xFFEFF6FF,
+      tag = "مشاريع مستقبلية",
+      isPinned = false
+    )
+
+    val notesAfterAdd = repository.notes.value
+    assertEquals(initialNotesCount + 1, notesAfterAdd.size)
+    val addedNote = notesAfterAdd.first { it.title == "فكرة قناة بودكاست صوتية" }
+    assertEquals("مشاريع مستقبلية", addedNote.tag)
+    assertFalse(addedNote.isPinned)
+
+    // Toggle Pin
+    repository.togglePinNote(addedNote.id)
+    val pinnedNote = repository.notes.value.first { it.id == addedNote.id }
+    assertTrue(pinnedNote.isPinned)
+
+    // Update Note
+    repository.updateNote(
+      noteId = addedNote.id,
+      title = "فكرة بودكاست العقل الثاني",
+      content = "تحديث الفكرة لتشمل استضافة خبراء",
+      colorLong = 0xFFECFDF5,
+      tag = "مشاريع مستقبلية",
+      isPinned = true
+    )
+    val updatedNote = repository.notes.value.first { it.id == addedNote.id }
+    assertEquals("فكرة بودكاست العقل الثاني", updatedNote.title)
+    assertEquals(0xFFECFDF5, updatedNote.colorLong)
+
+    // Delete Note
+    repository.deleteNote(addedNote.id)
+    assertEquals(initialNotesCount, repository.notes.value.size)
+    assertFalse(repository.notes.value.any { it.id == addedNote.id })
+  }
+
+  @Test
+  fun `test focus timer mode and duration settings`() {
+    val repository = MyOSRepository()
+    val viewModel = MyOSViewModel(repository)
+
+    // Default mode is Pomodoro with 25 minutes
+    assertEquals(FocusTimerMode.POMODORO, viewModel.uiState.value.focusTimerMode)
+    assertEquals(25 * 60, viewModel.uiState.value.focusTotalSeconds)
+
+    // Switch to Short Break (5 min)
+    viewModel.setFocusMode(FocusTimerMode.SHORT_BREAK)
+    assertEquals(FocusTimerMode.SHORT_BREAK, viewModel.uiState.value.focusTimerMode)
+    assertEquals(5 * 60, viewModel.uiState.value.focusTotalSeconds)
+
+    // Switch to Custom 45 minutes
+    viewModel.setFocusDurationMinutes(45)
+    assertEquals(FocusTimerMode.CUSTOM, viewModel.uiState.value.focusTimerMode)
+    assertEquals(45 * 60, viewModel.uiState.value.focusTotalSeconds)
+  }
+
+  @Test
+  fun `test focus auto-progress sync with timed habit and completion`() {
+    val repository = MyOSRepository()
+    val viewModel = MyOSViewModel(repository)
+
+    // Habit h4: "التدرب على الكيبورد" (target 30 minutes, current 20 minutes)
+    val keyboardHabitBefore = repository.habits.value.first { it.id == "h4" }
+    assertEquals(30, keyboardHabitBefore.targetValue)
+    assertEquals(20, keyboardHabitBefore.currentValue)
+    assertFalse(keyboardHabitBefore.isCompleted)
+
+    // Link focus session to keyboard habit
+    viewModel.setFocusAttachment(
+      FocusAttachment(
+        type = FocusAttachType.HABIT,
+        id = "h4",
+        title = keyboardHabitBefore.title,
+        iconEmoji = keyboardHabitBefore.iconEmoji,
+        targetMinutes = keyboardHabitBefore.targetValue,
+        currentMinutes = keyboardHabitBefore.currentValue,
+        unit = keyboardHabitBefore.unit,
+        isTimedHabit = true
+      )
+    )
+
+    // Set a 10-minute session to complete the remaining 10 minutes (20 + 10 = 30)
+    viewModel.setFocusDurationMinutes(10)
+    viewModel.finishEarlyAndRecordProgress()
+
+    // Habit h4 should now have 30 minutes and be marked completed!
+    val keyboardHabitAfter = repository.habits.value.first { it.id == "h4" }
+    assertEquals(30, keyboardHabitAfter.currentValue)
+    assertTrue(keyboardHabitAfter.isCompleted)
+    assertEquals(100, keyboardHabitAfter.progressPercentage)
+  }
+
+  @Test
+  fun `test focus auto-progress exceeding habit target shows motivational message`() {
+    val repository = MyOSRepository()
+    val viewModel = MyOSViewModel(repository)
+
+    val habit = repository.habits.value.first { it.id == "h4" }
+    viewModel.setFocusAttachment(
+      FocusAttachment(
+        type = FocusAttachType.HABIT,
+        id = habit.id,
+        title = habit.title,
+        iconEmoji = habit.iconEmoji,
+        targetMinutes = habit.targetValue,
+        currentMinutes = habit.currentValue,
+        unit = habit.unit,
+        isTimedHabit = true
+      )
+    )
+
+    // Start with current 20, add 25 min -> total 45 min (> 30 min target)
+    viewModel.setFocusDurationMinutes(25)
+    viewModel.finishEarlyAndRecordProgress()
+
+    val habitAfter = repository.habits.value.first { it.id == "h4" }
+    assertEquals(45, habitAfter.currentValue)
+    assertTrue(habitAfter.isCompleted)
+
+    // Notification message should praise exceeding the target
+    val notification = viewModel.uiState.value.notificationMessage ?: ""
+    assertTrue(notification.contains("تجاوزت المطلوب") || notification.contains("بطل حقيقي"))
+  }
+
+  @Test
+  fun `test ambient sound provider has required natural sounds`() {
+    val sounds = AmbientSoundProvider.defaultSounds
+    assertEquals(5, sounds.size)
+    assertTrue(sounds.any { it.type == AmbientSoundType.RAIN })
+    assertTrue(sounds.any { it.type == AmbientSoundType.OCEAN })
+    assertTrue(sounds.any { it.type == AmbientSoundType.FIRE })
+    assertTrue(sounds.any { it.type == AmbientSoundType.SNOW })
+    assertTrue(sounds.any { it.type == AmbientSoundType.FOREST })
   }
 }

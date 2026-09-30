@@ -65,6 +65,7 @@ fun GoalAccordionItem(
   isExpanded: Boolean,
   onToggleExpand: () -> Unit,
   onToggleGoalTask: (taskId: String) -> Unit,
+  onPostponeGoalTask: ((taskId: String) -> Unit)? = null,
   modifier: Modifier = Modifier
 ) {
   val rotationAngle by animateFloatAsState(
@@ -219,7 +220,8 @@ fun GoalAccordionItem(
             todayTasks.forEach { task ->
               GoalTaskAccordionRow(
                 task = task,
-                onToggle = { onToggleGoalTask(task.id) }
+                onToggle = { onToggleGoalTask(task.id) },
+                onPostpone = if (onPostponeGoalTask != null) { { onPostponeGoalTask(task.id) } } else null
               )
             }
           }
@@ -233,6 +235,7 @@ fun GoalAccordionItem(
 private fun GoalTaskAccordionRow(
   task: Task,
   onToggle: () -> Unit,
+  onPostpone: (() -> Unit)? = null,
   modifier: Modifier = Modifier
 ) {
   val checkBgColor by animateColorAsState(
@@ -286,6 +289,44 @@ private fun GoalTaskAccordionRow(
       color = if (task.isCompleted) TextSecondary.copy(alpha = 0.65f) else TextPrimary,
       modifier = Modifier.weight(1f)
     )
+
+    // Postpone action if not completed, or postponed badge if already postponed
+    if (!task.isCompleted && onPostpone != null) {
+      Spacer(modifier = Modifier.width(6.dp))
+      Box(
+        modifier = Modifier
+          .clip(RoundedCornerShape(8.dp))
+          .background(Color(0xFFEFF6FF))
+          .clickable { onPostpone() }
+          .padding(horizontal = 6.dp, vertical = 2.dp)
+      ) {
+        Text(
+          text = "ترحيل ➡️",
+          style = MaterialTheme.typography.labelSmall.copy(
+            fontSize = 9.sp,
+            fontWeight = FontWeight.SemiBold
+          ),
+          color = GoalBlue
+        )
+      }
+    } else if (task.isPostponed) {
+      Spacer(modifier = Modifier.width(6.dp))
+      Box(
+        modifier = Modifier
+          .clip(RoundedCornerShape(8.dp))
+          .background(Color(0xFFFFFBEB))
+          .padding(horizontal = 6.dp, vertical = 2.dp)
+      ) {
+        Text(
+          text = "مُرحّلة ➡️",
+          style = MaterialTheme.typography.labelSmall.copy(
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold
+          ),
+          color = Color(0xFFD97706)
+        )
+      }
+    }
 
     // Optional Priority tag if High
     if (task.priority == Priority.HIGH) {

@@ -88,6 +88,8 @@ fun HomeScreen(
   onToggleHabitBoolean: (String) -> Unit,
   onToggleTask: (String) -> Unit,
   onToggleGoalTask: (String, String) -> Unit,
+  onPostponeTask: (String) -> Unit = {},
+  onPostponeGoalTask: (String, String) -> Unit = { _, _ -> },
   onDismissNotification: () -> Unit,
   onCloseCreateTask: () -> Unit = {},
   onSaveGeneralTask: (
@@ -238,6 +240,8 @@ fun HomeScreen(
             onToggleHabitBoolean = onToggleHabitBoolean,
             onToggleTask = onToggleTask,
             onToggleGoalTask = onToggleGoalTask,
+            onPostponeTask = onPostponeTask,
+            onPostponeGoalTask = onPostponeGoalTask,
             onViewAllClick = {
               onScreenSelected(ScreenDestination.GOALS)
             },

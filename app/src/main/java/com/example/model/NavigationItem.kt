@@ -27,7 +27,7 @@ enum class ScreenDestination(
   GOALS("goals", "الأهداف", Icons.Outlined.TrackChanges, true),
   HABITS("habits", "العادات", Icons.Outlined.Spa, true),
   TASKS("tasks", "المهام", Icons.Outlined.CheckBox, true),
-  CALENDAR("calendar", "التقويم", Icons.Outlined.CalendarMonth),
+  CALENDAR("calendar", "التقويم", Icons.Outlined.CalendarMonth, true),
   PROJECTS("projects", "المشاريع", Icons.Outlined.FolderSpecial),
   LISTS("lists", "القوائم", Icons.AutoMirrored.Outlined.List),
   NOTES("notes", "الملاحظات", Icons.Outlined.Description),
@@ -35,7 +35,7 @@ enum class ScreenDestination(
   FOCUS("focus", "التركيز", Icons.Outlined.CenterFocusStrong),
   ANALYTICS("analytics", "التحليلات", Icons.Outlined.BarChart),
   SEARCH("search", "البحث", Icons.Outlined.Search),
-  MORE("more", "المزيد", Icons.AutoMirrored.Outlined.List, true),
+  MORE("more", "المزيد", Icons.AutoMirrored.Outlined.List, false),
   SETTINGS("settings", "الإعدادات", Icons.Outlined.Settings),
   HELP("help", "مساعدة", Icons.Outlined.HelpOutline)
 }

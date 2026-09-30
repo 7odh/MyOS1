@@ -1,20 +1,30 @@
 package com.example.data
 
 import com.example.model.DailyAnalytics
+import com.example.model.DayHabitRecord
 import com.example.model.DayOfWeekArabic
+import com.example.model.DaySummaryHistory
+import com.example.model.DayTaskRecord
 import com.example.model.Goal
 import com.example.model.Habit
 import com.example.model.HabitFrequency
 import com.example.model.HabitType
+import com.example.model.Note
 import com.example.model.Priority
 import com.example.model.Task
 import com.example.model.TaskSchedule
 import com.example.model.User
 import com.example.model.getCurrentDayOfWeekArabic
+import com.example.model.getTodayDateString
+import com.example.model.getTomorrowDateString
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
 
 class MyOSRepository {
@@ -436,6 +446,52 @@ class MyOSRepository {
   )
   val goals: StateFlow<List<Goal>> = _goals.asStateFlow()
 
+  private val _notes = MutableStateFlow(
+    listOf(
+      Note(
+        id = "n1",
+        title = "فكرة تطبيق مساعد بالذكاء الاصطناعي",
+        content = "تطبيق يساعد الطلاب على تلخيص المحاضرات الطويلة واستخراج الكلمات المفتاحية واختبار أنفسهم تلقائياً.",
+        tag = "مشاريع مستقبلية",
+        colorLong = 0xFFEFF6FF,
+        isPinned = true
+      ),
+      Note(
+        id = "n2",
+        title = "عادة المشي 20 دقيقة بعد الفجر",
+        content = "المشي في الهواء النقي بعد صلاة الفجر يساعد على تصفية الذهن وزيادة النشاط لليوم كاملاً.",
+        tag = "عادات مقترحة",
+        colorLong = 0xFFECFDF5,
+        isPinned = true
+      ),
+      Note(
+        id = "n3",
+        title = "تعلم المحادثة باللغة الإنجليزية",
+        content = "هدف للربع القادم: الانضمام لمجموعات محادثة أسبوعية والتركيز على الطلاقة بدون خوف من الخطأ.",
+        tag = "أفكار أهداف",
+        colorLong = 0xFFFAF5FF,
+        isPinned = false
+      ),
+      Note(
+        id = "n4",
+        title = "الانضباط التراكمي وتأثير الـ 1%",
+        content = "\"أنت لا ترتقي إلى مستوى أهدافك، بل تهبط إلى مستوى أنظمتك.\" التحسين الصغير اليومي يصنع فارقاً هائلاً عبر السنين.",
+        tag = "خواطر وتأملات",
+        colorLong = 0xFFFFFBEB,
+        isPinned = false
+      ),
+      Note(
+        id = "n5",
+        title = "قائمة كتب مقترحة للشهر القادم",
+        content = "1. العادات الذرية\n2. التركيز الفائق (Deep Work)\n3. التفكير السريع والبطيء\n4. أسبوع عمل من 4 ساعات",
+        tag = "كتب ومصادر",
+        colorLong = 0xFFFFF1F2,
+        isPinned = false
+      )
+    )
+  )
+  val notes: StateFlow<List<Note>> = _notes.asStateFlow()
+
   fun updateUserName(newName: String) {
     _user.update { it.copy(name = newName.trim().ifEmpty { it.name }) }
   }
@@ -824,6 +880,231 @@ class MyOSRepository {
     _generalTasks.update { list -> list.filterNot { it.id == taskId } }
   }
 
+  fun addNote(
+    title: String,
+    content: String,
+    colorLong: Long = 0xFFFFFBEB,
+    tag: String = "أفكار عامة",
+    isPinned: Boolean = false
+  ) {
+    val newNote = Note(
+      id = UUID.randomUUID().toString(),
+      title = title.trim(),
+      content = content.trim(),
+      colorLong = colorLong,
+      tag = tag,
+      isPinned = isPinned,
+      createdAt = System.currentTimeMillis(),
+      updatedAt = System.currentTimeMillis()
+    )
+    _notes.update { listOf(newNote) + it }
+  }
+
+  fun updateNote(
+    noteId: String,
+    title: String,
+    content: String,
+    colorLong: Long,
+    tag: String,
+    isPinned: Boolean
+  ) {
+    _notes.update { list ->
+      list.map { note ->
+        if (note.id == noteId) {
+          note.copy(
+            title = title.trim(),
+            content = content.trim(),
+            colorLong = colorLong,
+            tag = tag,
+            isPinned = isPinned,
+            updatedAt = System.currentTimeMillis()
+          )
+        } else note
+      }
+    }
+  }
+
+  fun togglePinNote(noteId: String) {
+    _notes.update { list ->
+      list.map { note ->
+        if (note.id == noteId) {
+          note.copy(isPinned = !note.isPinned)
+        } else note
+      }
+    }
+  }
+
+  fun deleteNote(noteId: String) {
+    _notes.update { list -> list.filterNot { it.id == noteId } }
+  }
+
+  fun postponeGeneralTask(taskId: String) {
+    val tomorrow = getTomorrowDateString()
+    val today = getTodayDateString()
+    _generalTasks.update { list ->
+      list.map { task ->
+        if (task.id == taskId) {
+          task.copy(
+            schedule = TaskSchedule.TOMORROW,
+            dueDateFormatted = tomorrow,
+            isPostponed = true,
+            postponedCount = task.postponedCount + 1,
+            postponedFromDate = today
+          )
+        } else task
+      }
+    }
+  }
+
+  fun postponeGoalTask(goalId: String, taskId: String) {
+    val tomorrow = getTomorrowDateString()
+    val today = getTodayDateString()
+    _goals.update { list ->
+      list.map { goal ->
+        if (goal.id == goalId) {
+          val updatedTasks = goal.tasks.map { task ->
+            if (task.id == taskId) {
+              task.copy(
+                schedule = TaskSchedule.TOMORROW,
+                dueDateFormatted = tomorrow,
+                isPostponed = true,
+                postponedCount = task.postponedCount + 1,
+                postponedFromDate = today
+              )
+            } else task
+          }
+          goal.copy(tasks = updatedTasks)
+        } else goal
+      }
+    }
+  }
+
+  // Pre-configured historical daily logs for past days to demonstrate comprehensive tracking
+  private val _dailyHistory = MutableStateFlow<Map<String, DaySummaryHistory>>(
+    createInitialPastDailyHistory()
+  )
+  val dailyHistory: StateFlow<Map<String, DaySummaryHistory>> = _dailyHistory.asStateFlow()
+
+  fun getDaySummary(dateKey: String): DaySummaryHistory {
+    val todayKey = getTodayDateString()
+    val cleanDateKey = dateKey.trim().replace('-', '/')
+
+    // 1. If today: calculate live in real-time from active habits, tasks, and goals
+    if (cleanDateKey == todayKey) {
+      val todayDay = getCurrentDayOfWeekArabic()
+      val habitList = _habits.value
+      val todayScheduledHabits = habitList.filter { it.isScheduledForToday(todayDay) }
+
+      val habitRecords = todayScheduledHabits.map { habit ->
+        val isDone = habit.isCompleted
+        val note = when {
+          isDone -> "مكتمل بالكامل 🌟"
+          habit.currentValue > 0 -> "أنجزت ${habit.currentValue} من ${habit.targetValue} ${habit.unit}"
+          else -> "لم يُنجز بعد"
+        }
+        DayHabitRecord(
+          habitId = habit.id,
+          title = habit.title,
+          iconEmoji = habit.iconEmoji,
+          targetValue = habit.targetValue,
+          actualValue = habit.currentValue,
+          unit = habit.unit,
+          type = habit.type,
+          isMandatory = habit.isMandatory,
+          isCompleted = isDone,
+          statusNote = note
+        )
+      }
+
+      val todayGeneralTasks = _generalTasks.value.filter { it.isDueToday }.map {
+        DayTaskRecord(task = it, isGoalTask = false)
+      }
+
+      val todayGoalTasks = _goals.value.flatMap { goal ->
+        goal.todayTasks.map { task ->
+          DayTaskRecord(
+            task = task,
+            isGoalTask = true,
+            goalId = goal.id,
+            goalTitle = goal.title,
+            goalIconId = goal.iconId
+          )
+        }
+      }
+
+      return DaySummaryHistory(
+        dateKey = todayKey,
+        dateDisplayArabic = formatArabicDisplayDateFromKey(todayKey),
+        dayOfWeekArabic = todayDay,
+        habits = habitRecords,
+        tasks = todayGeneralTasks + todayGoalTasks,
+        isToday = true,
+        isPast = false,
+        isFuture = false
+      )
+    }
+
+    // 2. If existing historical record:
+    _dailyHistory.value[cleanDateKey]?.let { return it }
+
+    // 3. For any other date (arbitrary past or future): compute dynamic representation
+    val cal = Calendar.getInstance()
+    try {
+      val sdf = SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH)
+      cal.time = sdf.parse(cleanDateKey) ?: Date()
+    } catch (_: Exception) {}
+
+    val isPastDate = cleanDateKey < todayKey
+    val dayOfWeek = getDayOfWeekArabicFromCalendar(cal)
+
+    // Habits scheduled for that day
+    val habitRecords = _habits.value.filter { it.isScheduledForToday(dayOfWeek) }.map { habit ->
+      DayHabitRecord(
+        habitId = habit.id,
+        title = habit.title,
+        iconEmoji = habit.iconEmoji,
+        targetValue = habit.targetValue,
+        actualValue = if (isPastDate) habit.targetValue else 0,
+        unit = habit.unit,
+        type = habit.type,
+        isMandatory = habit.isMandatory,
+        isCompleted = isPastDate,
+        statusNote = if (isPastDate) "مكتمل في هذا اليوم" else "مجدول"
+      )
+    }
+
+    val matchedGeneralTasks = _generalTasks.value.filter { task ->
+      val taskClean = task.dueDateFormatted?.trim()?.replace('-', '/')
+      taskClean == cleanDateKey
+    }.map { DayTaskRecord(task = it, isGoalTask = false) }
+
+    val matchedGoalTasks = _goals.value.flatMap { goal ->
+      goal.tasks.filter { task ->
+        val taskClean = task.dueDateFormatted?.trim()?.replace('-', '/')
+        taskClean == cleanDateKey
+      }.map { task ->
+        DayTaskRecord(
+          task = task,
+          isGoalTask = true,
+          goalId = goal.id,
+          goalTitle = goal.title,
+          goalIconId = goal.iconId
+        )
+      }
+    }
+
+    return DaySummaryHistory(
+      dateKey = cleanDateKey,
+      dateDisplayArabic = formatArabicDisplayDateFromKey(cleanDateKey),
+      dayOfWeekArabic = dayOfWeek,
+      habits = habitRecords,
+      tasks = matchedGeneralTasks + matchedGoalTasks,
+      isToday = false,
+      isPast = isPastDate,
+      isFuture = cleanDateKey > todayKey
+    )
+  }
+
   fun calculateAnalytics(): DailyAnalytics {
     val habitList = _habits.value
     val taskList = _generalTasks.value
@@ -854,3 +1135,415 @@ class MyOSRepository {
     )
   }
 }
+
+fun getDateOffsetKey(daysOffset: Int): String {
+  val cal = Calendar.getInstance()
+  cal.add(Calendar.DAY_OF_YEAR, daysOffset)
+  return SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH).format(cal.time)
+}
+
+fun formatArabicDisplayDateFromKey(dateKey: String): String {
+  return try {
+    val clean = dateKey.trim().replace('-', '/')
+    val sdf = SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH)
+    val date = sdf.parse(clean) ?: Date()
+    val cal = Calendar.getInstance().apply { time = date }
+    val dayOfWeek = when (cal.get(Calendar.DAY_OF_WEEK)) {
+      Calendar.SATURDAY -> "السبت"
+      Calendar.SUNDAY -> "الأحد"
+      Calendar.MONDAY -> "الإثنين"
+      Calendar.TUESDAY -> "الثلاثاء"
+      Calendar.WEDNESDAY -> "الأربعاء"
+      Calendar.THURSDAY -> "الخميس"
+      Calendar.FRIDAY -> "الجمعة"
+      else -> ""
+    }
+    val monthsArabic = listOf("يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر")
+    val day = cal.get(Calendar.DAY_OF_MONTH)
+    val month = monthsArabic[cal.get(Calendar.MONTH)]
+    val year = cal.get(Calendar.YEAR)
+    "$dayOfWeek، $day $month $year"
+  } catch (e: Exception) {
+    dateKey
+  }
+}
+
+fun getDayOfWeekArabicFromCalendar(cal: Calendar): DayOfWeekArabic {
+  return when (cal.get(Calendar.DAY_OF_WEEK)) {
+    Calendar.SATURDAY -> DayOfWeekArabic.SATURDAY
+    Calendar.SUNDAY -> DayOfWeekArabic.SUNDAY
+    Calendar.MONDAY -> DayOfWeekArabic.MONDAY
+    Calendar.TUESDAY -> DayOfWeekArabic.TUESDAY
+    Calendar.WEDNESDAY -> DayOfWeekArabic.WEDNESDAY
+    Calendar.THURSDAY -> DayOfWeekArabic.THURSDAY
+    Calendar.FRIDAY -> DayOfWeekArabic.FRIDAY
+    else -> DayOfWeekArabic.SUNDAY
+  }
+}
+
+private fun createInitialPastDailyHistory(): Map<String, DaySummaryHistory> {
+  val map = mutableMapOf<String, DaySummaryHistory>()
+
+  // 1. Yesterday (أمس): demonstrating partial completion, missed gym, and partial reading!
+  val yestKey = getDateOffsetKey(-1)
+  val yestCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
+  map[yestKey] = DaySummaryHistory(
+    dateKey = yestKey,
+    dateDisplayArabic = formatArabicDisplayDateFromKey(yestKey),
+    dayOfWeekArabic = getDayOfWeekArabicFromCalendar(yestCal),
+    isToday = false,
+    isPast = true,
+    isFuture = false,
+    habits = listOf(
+      DayHabitRecord(
+        habitId = "h1",
+        title = "الصلوات الخمس",
+        iconEmoji = "🕌",
+        targetValue = 5,
+        actualValue = 5,
+        unit = "صلوات",
+        type = HabitType.COUNTER,
+        isMandatory = true,
+        isCompleted = true,
+        statusNote = "مكتمل بالكامل 5 صلوات 🌟"
+      ),
+      DayHabitRecord(
+        habitId = "h3",
+        title = "الورد القرآني",
+        iconEmoji = "📖",
+        targetValue = 10,
+        actualValue = 7,
+        unit = "صفحة",
+        type = HabitType.QUANTITY,
+        isMandatory = true,
+        isCompleted = false,
+        statusNote = "تم قراءة 7 من 10 صفحات (70%) ⏳"
+      ),
+      DayHabitRecord(
+        habitId = "h2",
+        title = "الذهاب للجيم (تمارين رياضية)",
+        iconEmoji = "🏋️‍♂️",
+        targetValue = 60,
+        actualValue = 0,
+        unit = "دقيقة",
+        type = HabitType.DURATION,
+        isMandatory = false,
+        isCompleted = false,
+        statusNote = "لم يتم الذهاب للجيم (0 من 60 دقيقة) ❌"
+      ),
+      DayHabitRecord(
+        habitId = "h4",
+        title = "التدرب على الكيبورد",
+        iconEmoji = "⌨️",
+        targetValue = 30,
+        actualValue = 30,
+        unit = "دقيقة",
+        type = HabitType.DURATION,
+        isMandatory = false,
+        isCompleted = true,
+        statusNote = "تم إنجاز 30 دقيقة تدريب ⌨️"
+      ),
+      DayHabitRecord(
+        habitId = "h6",
+        title = "شرب الماء",
+        iconEmoji = "💧",
+        targetValue = 8,
+        actualValue = 8,
+        unit = "أكواب",
+        type = HabitType.COUNTER,
+        isMandatory = true,
+        isCompleted = true,
+        statusNote = "8 من 8 أكواب ماء 💧"
+      ),
+      DayHabitRecord(
+        habitId = "h7",
+        title = "أذكار الصباح والمساء",
+        iconEmoji = "✨",
+        targetValue = 1,
+        actualValue = 1,
+        unit = "مرة",
+        type = HabitType.BOOLEAN,
+        isMandatory = true,
+        isCompleted = true,
+        statusNote = "تمت قراءة الأذكار بنجاح ✨"
+      )
+    ),
+    tasks = listOf(
+      DayTaskRecord(
+        task = Task(
+          id = "past_t1",
+          title = "إنهاء مسودة العرض التقديمي",
+          priority = Priority.HIGH,
+          isCompleted = true,
+          dueDateFormatted = yestKey
+        ),
+        isGoalTask = false
+      ),
+      DayTaskRecord(
+        task = Task(
+          id = "past_t2",
+          title = "إرسال التقرير الأسبوعي للإدارة",
+          priority = Priority.MEDIUM,
+          isCompleted = true,
+          dueDateFormatted = yestKey
+        ),
+        isGoalTask = false
+      ),
+      DayTaskRecord(
+        task = Task(
+          id = "past_t3",
+          title = "مراجعة عقود الصيانة وتحديث السجلات",
+          priority = Priority.LOW,
+          isCompleted = false,
+          isPostponed = true,
+          postponedCount = 1,
+          postponedFromDate = yestKey,
+          notes = "تم ترحيل المهمة للغد لضيق الوقت ➡️",
+          dueDateFormatted = yestKey
+        ),
+        isGoalTask = false
+      ),
+      DayTaskRecord(
+        task = Task(
+          id = "past_gt1",
+          title = "حفظ 20 كلمة جديدة بالإنجليزية",
+          priority = Priority.HIGH,
+          isCompleted = true,
+          goalId = "g1",
+          isGoalTask = true,
+          dueDateFormatted = yestKey
+        ),
+        isGoalTask = true,
+        goalId = "g1",
+        goalTitle = "إتقان اللغة الإنجليزية",
+        goalIconId = "book"
+      ),
+      DayTaskRecord(
+        task = Task(
+          id = "past_gt2",
+          title = "تصميم واجهة لوحة التحكم",
+          priority = Priority.HIGH,
+          isCompleted = true,
+          goalId = "g2",
+          isGoalTask = true,
+          dueDateFormatted = yestKey
+        ),
+        isGoalTask = true,
+        goalId = "g2",
+        goalTitle = "تطوير المهارات البرمجية",
+        goalIconId = "code"
+      )
+    )
+  )
+
+  // 2. Two days ago (قبل يومين): High achievement day
+  val twoDaysKey = getDateOffsetKey(-2)
+  val twoDaysCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -2) }
+  map[twoDaysKey] = DaySummaryHistory(
+    dateKey = twoDaysKey,
+    dateDisplayArabic = formatArabicDisplayDateFromKey(twoDaysKey),
+    dayOfWeekArabic = getDayOfWeekArabicFromCalendar(twoDaysCal),
+    isToday = false,
+    isPast = true,
+    isFuture = false,
+    habits = listOf(
+      DayHabitRecord(
+        habitId = "h1",
+        title = "الصلوات الخمس",
+        iconEmoji = "🕌",
+        targetValue = 5,
+        actualValue = 5,
+        unit = "صلوات",
+        type = HabitType.COUNTER,
+        isMandatory = true,
+        isCompleted = true,
+        statusNote = "مكتمل بالكامل 5 صلوات 🌟"
+      ),
+      DayHabitRecord(
+        habitId = "h3",
+        title = "الورد القرآني",
+        iconEmoji = "📖",
+        targetValue = 10,
+        actualValue = 10,
+        unit = "صفحة",
+        type = HabitType.QUANTITY,
+        isMandatory = true,
+        isCompleted = true,
+        statusNote = "تم قراءة 10 من 10 صفحات (100%) 🌟"
+      ),
+      DayHabitRecord(
+        habitId = "h4",
+        title = "التدرب على الكيبورد",
+        iconEmoji = "⌨️",
+        targetValue = 30,
+        actualValue = 30,
+        unit = "دقيقة",
+        type = HabitType.DURATION,
+        isMandatory = false,
+        isCompleted = true,
+        statusNote = "أكملت 30 دقيقة تدريب ⌨️"
+      ),
+      DayHabitRecord(
+        habitId = "h5",
+        title = "تمارين الضغط",
+        iconEmoji = "💪",
+        targetValue = 50,
+        actualValue = 50,
+        unit = "عدة",
+        type = HabitType.QUANTITY,
+        isMandatory = false,
+        isCompleted = true,
+        statusNote = "50 عدة ضغط 💪"
+      ),
+      DayHabitRecord(
+        habitId = "h6",
+        title = "شرب الماء",
+        iconEmoji = "💧",
+        targetValue = 8,
+        actualValue = 7,
+        unit = "أكواب",
+        type = HabitType.COUNTER,
+        isMandatory = true,
+        isCompleted = false,
+        statusNote = "7 من 8 أكواب ماء"
+      ),
+      DayHabitRecord(
+        habitId = "h7",
+        title = "أذكار الصباح والمساء",
+        iconEmoji = "✨",
+        targetValue = 1,
+        actualValue = 1,
+        unit = "مرة",
+        type = HabitType.BOOLEAN,
+        isMandatory = true,
+        isCompleted = true,
+        statusNote = "تمت قراءة الأذكار ✨"
+      )
+    ),
+    tasks = listOf(
+      DayTaskRecord(
+        task = Task(
+          id = "d2_t1",
+          title = "تنظيم ملفات المشروع",
+          priority = Priority.MEDIUM,
+          isCompleted = true,
+          dueDateFormatted = twoDaysKey
+        ),
+        isGoalTask = false
+      ),
+      DayTaskRecord(
+        task = Task(
+          id = "d2_t2",
+          title = "الاتصال بالعميل لمناقشة المتطلبات",
+          priority = Priority.HIGH,
+          isCompleted = true,
+          dueDateFormatted = twoDaysKey
+        ),
+        isGoalTask = false
+      ),
+      DayTaskRecord(
+        task = Task(
+          id = "d2_gt1",
+          title = "جلسة استطالة ومساج",
+          priority = Priority.LOW,
+          isCompleted = true,
+          goalId = "g3",
+          isGoalTask = true,
+          dueDateFormatted = twoDaysKey
+        ),
+        isGoalTask = true,
+        goalId = "g3",
+        goalTitle = "تحسين اللياقة البدنية",
+        goalIconId = "fitness"
+      )
+    )
+  )
+
+  // 3. Three days ago (قبل 3 أيام)
+  val threeDaysKey = getDateOffsetKey(-3)
+  val threeDaysCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -3) }
+  map[threeDaysKey] = DaySummaryHistory(
+    dateKey = threeDaysKey,
+    dateDisplayArabic = formatArabicDisplayDateFromKey(threeDaysKey),
+    dayOfWeekArabic = getDayOfWeekArabicFromCalendar(threeDaysCal),
+    isToday = false,
+    isPast = true,
+    isFuture = false,
+    habits = listOf(
+      DayHabitRecord(
+        habitId = "h1",
+        title = "الصلوات الخمس",
+        iconEmoji = "🕌",
+        targetValue = 5,
+        actualValue = 5,
+        unit = "صلوات",
+        type = HabitType.COUNTER,
+        isMandatory = true,
+        isCompleted = true,
+        statusNote = "مكتمل بالكامل 5 صلوات 🕌"
+      ),
+      DayHabitRecord(
+        habitId = "h3",
+        title = "الورد القرآني",
+        iconEmoji = "📖",
+        targetValue = 10,
+        actualValue = 10,
+        unit = "صفحة",
+        type = HabitType.QUANTITY,
+        isMandatory = true,
+        isCompleted = true,
+        statusNote = "10 من 10 صفحات 📖"
+      ),
+      DayHabitRecord(
+        habitId = "h6",
+        title = "شرب الماء",
+        iconEmoji = "💧",
+        targetValue = 8,
+        actualValue = 8,
+        unit = "أكواب",
+        type = HabitType.COUNTER,
+        isMandatory = true,
+        isCompleted = true,
+        statusNote = "8 أكواب ماء 💧"
+      ),
+      DayHabitRecord(
+        habitId = "h7",
+        title = "أذكار الصباح والمساء",
+        iconEmoji = "✨",
+        targetValue = 1,
+        actualValue = 1,
+        unit = "مرة",
+        type = HabitType.BOOLEAN,
+        isMandatory = true,
+        isCompleted = true,
+        statusNote = "تمت قراءة الأذكار ✨"
+      )
+    ),
+    tasks = listOf(
+      DayTaskRecord(
+        task = Task(
+          id = "d3_t1",
+          title = "مراجعة الكود البرمجي الخاص بالمستودع",
+          priority = Priority.HIGH,
+          isCompleted = true,
+          dueDateFormatted = threeDaysKey
+        ),
+        isGoalTask = false
+      ),
+      DayTaskRecord(
+        task = Task(
+          id = "d3_t2",
+          title = "شراء المستلزمات المكتبية",
+          priority = Priority.LOW,
+          isCompleted = false,
+          notes = "لم يتسع الوقت لزيارة المتجر ❌",
+          dueDateFormatted = threeDaysKey
+        ),
+        isGoalTask = false
+      )
+    )
+  )
+
+  return map
+}
+

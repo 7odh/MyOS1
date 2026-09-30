@@ -3,7 +3,7 @@ package com.example.ui.components
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CheckBox
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Spa
@@ -37,7 +37,7 @@ data class BottomNavTab(
 fun MyOSBottomNavigationBar(
   currentScreen: ScreenDestination,
   onTabSelected: (ScreenDestination) -> Unit,
-  onMoreClick: () -> Unit,
+  onMoreClick: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val tabs = listOf(
@@ -45,7 +45,7 @@ fun MyOSBottomNavigationBar(
     BottomNavTab(ScreenDestination.GOALS, "الأهداف", Icons.Outlined.TrackChanges),
     BottomNavTab(ScreenDestination.HABITS, "العادات", Icons.Outlined.Spa),
     BottomNavTab(ScreenDestination.TASKS, "المهام", Icons.Outlined.CheckBox),
-    BottomNavTab(ScreenDestination.MORE, "المزيد", Icons.Filled.MoreHoriz)
+    BottomNavTab(ScreenDestination.CALENDAR, "التقويم", Icons.Outlined.CalendarMonth)
   )
 
   NavigationBar(
@@ -59,11 +59,7 @@ fun MyOSBottomNavigationBar(
       NavigationBarItem(
         selected = isSelected,
         onClick = {
-          if (tab.destination == ScreenDestination.MORE) {
-            onMoreClick()
-          } else {
-            onTabSelected(tab.destination)
-          }
+          onTabSelected(tab.destination)
         },
         icon = {
           Icon(

@@ -3,17 +3,26 @@ package com.example.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.MyOSRepository
+import com.example.model.AmbientSoundType
+import com.example.model.CalendarViewMode
 import com.example.model.DailyAnalytics
 import com.example.model.DayOfWeekArabic
+import com.example.model.FocusAttachment
+import com.example.model.FocusAttachType
+import com.example.model.FocusTimerMode
 import com.example.model.Goal
 import com.example.model.Habit
 import com.example.model.HabitFrequency
 import com.example.model.HabitType
+import com.example.model.Note
 import com.example.model.Priority
 import com.example.model.QuickAddType
 import com.example.model.ScreenDestination
 import com.example.model.Task
 import com.example.model.TaskSchedule
+import com.example.util.AmbientSoundManager
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,6 +34,9 @@ class MyOSViewModel(
   private val repository: MyOSRepository = MyOSRepository()
 ) : ViewModel() {
 
+  private val soundManager = AmbientSoundManager()
+  private var focusTimerJob: Job? = null
+
   private val _uiState = MutableStateFlow(MyOSUiState())
   val uiState: StateFlow<MyOSUiState> = _uiState.asStateFlow()
 
@@ -34,8 +46,9 @@ class MyOSViewModel(
         repository.user,
         repository.habits,
         repository.generalTasks,
-        repository.goals
-      ) { user, habits, tasks, goals ->
+        repository.goals,
+        repository.notes
+      ) { user, habits, tasks, goals, notes ->
         val activeGoals = goals.filter { !it.isPaused }
         // Today's goals progress is calculated strictly from today's scheduled goal tasks
         val todayGoalTasks = activeGoals.flatMap { it.todayTasks }
@@ -56,13 +69,27 @@ class MyOSViewModel(
           goalsCompleted = todayGoalTasks.count { it.isCompleted },
           goalsTotal = todayGoalTasks.size
         )
+        val selectedDate = _uiState.value.selectedCalendarDate
+        val daySummary = repository.getDaySummary(selectedDate)
         _uiState.update { current ->
+          val updatedAttachment = if (current.focusAttachment.type == FocusAttachType.HABIT) {
+            habits.find { it.id == current.focusAttachment.id }?.let { h ->
+              current.focusAttachment.copy(
+                currentMinutes = h.currentValue,
+                targetMinutes = h.targetValue
+              )
+            } ?: current.focusAttachment
+          } else current.focusAttachment
+
           current.copy(
             user = user,
             habits = habits,
             generalTasks = tasks,
             goals = goals,
-            dailyAnalytics = analytics
+            notes = notes,
+            dailyAnalytics = analytics,
+            selectedDaySummary = daySummary,
+            focusAttachment = updatedAttachment
           )
         }
       }.collect {}
@@ -444,5 +471,361 @@ class MyOSViewModel(
   fun deleteGeneralTask(taskId: String) {
     repository.deleteGeneralTask(taskId)
     _uiState.update { it.copy(notificationMessage = "تم حذف المهمة") }
+  }
+
+  fun postponeGeneralTask(taskId: String) {
+    repository.postponeGeneralTask(taskId)
+    val selectedDate = _uiState.value.selectedCalendarDate
+    val updatedSummary = repository.getDaySummary(selectedDate)
+    _uiState.update {
+      it.copy(
+        selectedDaySummary = updatedSummary,
+        notificationMessage = "تم ترحيل المهمة إلى الغد بنجاح ➡️"
+      )
+    }
+  }
+
+  fun postponeGoalTask(goalId: String, taskId: String) {
+    repository.postponeGoalTask(goalId, taskId)
+    val selectedDate = _uiState.value.selectedCalendarDate
+    val updatedSummary = repository.getDaySummary(selectedDate)
+    _uiState.update {
+      it.copy(
+        selectedDaySummary = updatedSummary,
+        notificationMessage = "تم ترحيل مهمة الهدف إلى الغد بنجاح ➡️"
+      )
+    }
+  }
+
+  fun onSelectCalendarDate(dateKey: String) {
+    val summary = repository.getDaySummary(dateKey)
+    _uiState.update {
+      it.copy(
+        selectedCalendarDate = dateKey,
+        selectedDaySummary = summary
+      )
+    }
+  }
+
+  fun onChangeCalendarViewMode(mode: CalendarViewMode) {
+    _uiState.update { it.copy(calendarViewMode = mode) }
+  }
+
+  fun openCreateNoteSheet() {
+    _uiState.update { it.copy(isCreateNoteSheetVisible = true, editingNote = null) }
+  }
+
+  fun openEditNote(note: Note) {
+    _uiState.update { it.copy(isCreateNoteSheetVisible = true, editingNote = note) }
+  }
+
+  fun closeCreateNoteSheet() {
+    _uiState.update { it.copy(isCreateNoteSheetVisible = false, editingNote = null) }
+  }
+
+  fun saveNote(
+    title: String,
+    content: String,
+    colorLong: Long,
+    tag: String,
+    isPinned: Boolean
+  ) {
+    val editing = _uiState.value.editingNote
+    if (editing != null) {
+      repository.updateNote(
+        noteId = editing.id,
+        title = title,
+        content = content,
+        colorLong = colorLong,
+        tag = tag,
+        isPinned = isPinned
+      )
+      _uiState.update { it.copy(notificationMessage = "تم تحديث الفكرة في المخزن 💡") }
+    } else {
+      repository.addNote(
+        title = title,
+        content = content,
+        colorLong = colorLong,
+        tag = tag,
+        isPinned = isPinned
+      )
+      _uiState.update { it.copy(notificationMessage = "تم حفظ الفكرة في مخزن الأفكار ✨") }
+    }
+    closeCreateNoteSheet()
+  }
+
+  fun togglePinNote(noteId: String) {
+    repository.togglePinNote(noteId)
+  }
+
+  fun deleteNote(noteId: String) {
+    repository.deleteNote(noteId)
+    _uiState.update { it.copy(notificationMessage = "تم حذف الفكرة") }
+  }
+
+  fun setActiveNoteTag(tag: String) {
+    _uiState.update { it.copy(activeNoteTag = tag) }
+  }
+
+  fun setNoteSearchQuery(query: String) {
+    _uiState.update { it.copy(noteSearchQuery = query) }
+  }
+
+  // Convert Idea to Goal
+  fun convertNoteToGoal(note: Note) {
+    val tempGoal = Goal(
+      id = "",
+      title = note.title,
+      description = note.content,
+      priority = Priority.HIGH
+    )
+    _uiState.update {
+      it.copy(
+        isCreateGoalSheetVisible = true,
+        editingGoal = tempGoal,
+        notificationMessage = "تحويل الفكرة إلى هدف 🎯"
+      )
+    }
+  }
+
+  // Convert Idea to Habit
+  fun convertNoteToHabit(note: Note) {
+    val tempHabit = Habit(
+      id = "",
+      title = note.title,
+      priority = Priority.HIGH
+    )
+    _uiState.update {
+      it.copy(
+        isCreateHabitSheetVisible = true,
+        editingHabit = tempHabit,
+        notificationMessage = "تحويل الفكرة إلى عادة مقترحة 🌱"
+      )
+    }
+  }
+
+  // Convert Idea to Task
+  fun convertNoteToTask(note: Note) {
+    val tempTask = Task(
+      id = "",
+      title = note.title,
+      notes = note.content,
+      priority = Priority.MEDIUM,
+      schedule = TaskSchedule.TODAY
+    )
+    _uiState.update {
+      it.copy(
+        isCreateTaskSheetVisible = true,
+        editingGeneralTask = tempTask,
+        notificationMessage = "تحويل الفكرة إلى مهمة ⚡"
+      )
+    }
+  }
+
+  // ── Focus & Pomodoro Functions ──
+
+  fun setFocusMode(mode: FocusTimerMode) {
+    focusTimerJob?.cancel()
+    soundManager.stopSound()
+    val seconds = mode.defaultMinutes * 60
+    _uiState.update {
+      it.copy(
+        focusTimerMode = mode,
+        focusTotalSeconds = seconds,
+        focusRemainingSeconds = seconds,
+        isFocusTimerRunning = false
+      )
+    }
+  }
+
+  fun setFocusDurationMinutes(minutes: Int) {
+    focusTimerJob?.cancel()
+    soundManager.stopSound()
+    val validMinutes = minutes.coerceIn(1, 180)
+    val seconds = validMinutes * 60
+    val mode = when (validMinutes) {
+      25 -> FocusTimerMode.POMODORO
+      5 -> FocusTimerMode.SHORT_BREAK
+      15 -> FocusTimerMode.LONG_BREAK
+      else -> FocusTimerMode.CUSTOM
+    }
+    _uiState.update {
+      it.copy(
+        focusTimerMode = mode,
+        focusTotalSeconds = seconds,
+        focusRemainingSeconds = seconds,
+        isFocusTimerRunning = false,
+        isCustomDurationDialogVisible = false
+      )
+    }
+  }
+
+  fun startFocusTimer() {
+    if (_uiState.value.isFocusTimerRunning) return
+    if (_uiState.value.focusRemainingSeconds <= 0) {
+      val resetSecs = _uiState.value.focusTotalSeconds
+      _uiState.update { it.copy(focusRemainingSeconds = resetSecs) }
+    }
+    _uiState.update { it.copy(isFocusTimerRunning = true) }
+
+    if (_uiState.value.selectedAmbientSound != AmbientSoundType.NONE) {
+      soundManager.playSound(_uiState.value.selectedAmbientSound)
+    }
+
+    focusTimerJob?.cancel()
+    focusTimerJob = viewModelScope.launch {
+      while (_uiState.value.isFocusTimerRunning && _uiState.value.focusRemainingSeconds > 0) {
+        delay(1000L)
+        val currentRemaining = _uiState.value.focusRemainingSeconds
+        if (currentRemaining <= 1) {
+          _uiState.update { it.copy(focusRemainingSeconds = 0) }
+          completeFocusSession(forceCompleted = true)
+          break
+        } else {
+          _uiState.update { it.copy(focusRemainingSeconds = currentRemaining - 1) }
+        }
+      }
+    }
+  }
+
+  fun pauseFocusTimer() {
+    focusTimerJob?.cancel()
+    soundManager.stopSound()
+    _uiState.update { it.copy(isFocusTimerRunning = false) }
+  }
+
+  fun resetFocusTimer() {
+    focusTimerJob?.cancel()
+    soundManager.stopSound()
+    _uiState.update {
+      it.copy(
+        isFocusTimerRunning = false,
+        focusRemainingSeconds = it.focusTotalSeconds
+      )
+    }
+  }
+
+  fun finishEarlyAndRecordProgress() {
+    completeFocusSession(forceCompleted = false)
+  }
+
+  private fun completeFocusSession(forceCompleted: Boolean) {
+    focusTimerJob?.cancel()
+    soundManager.stopSound()
+
+    val totalSecs = _uiState.value.focusTotalSeconds
+    val remainingSecs = _uiState.value.focusRemainingSeconds
+    val elapsedSecs = totalSecs - remainingSecs
+    val elapsedMinutes = if (forceCompleted || remainingSecs <= 0 || elapsedSecs <= 0) {
+      (totalSecs / 60).coerceAtLeast(1)
+    } else {
+      (elapsedSecs / 60).coerceAtLeast(1)
+    }
+
+    val attachment = _uiState.value.focusAttachment
+    var customNotification: String? = null
+
+    when (attachment.type) {
+      FocusAttachType.HABIT -> {
+        val habit = repository.habits.value.find { it.id == attachment.id }
+        if (habit != null) {
+          val newCurrent = habit.currentValue + elapsedMinutes
+          repository.updateHabitProgress(habit.id, newCurrent)
+
+          customNotification = if (habit.targetValue > 0 && newCurrent > habit.targetValue) {
+            "رائع جداً وبطل حقيقي! 🚀 تجاوزت المطلوب في عادة '${habit.title}' ($newCurrent من ${habit.targetValue} ${habit.unit})! شغف وعزيمة استثنائية! 🔥"
+          } else if (habit.targetValue > 0 && newCurrent >= habit.targetValue) {
+            "ألف مبروك! 🎉 أتممت المطلوب لليوم كاملاً في عادة '${habit.title}' ($newCurrent من ${habit.targetValue} ${habit.unit})! 🌟"
+          } else {
+            "تم تسجيل $elapsedMinutes دقيقة بنجاح لعادة '${habit.title}' ($newCurrent من ${habit.targetValue} ${habit.unit})! استمر! 👏"
+          }
+        }
+      }
+      FocusAttachType.GENERAL_TASK -> {
+        val task = repository.generalTasks.value.find { it.id == attachment.id }
+        if (task != null) {
+          if (!task.isCompleted) {
+            repository.toggleGeneralTask(task.id)
+            customNotification = "عاش يا بطل! 🎯 تم إتمام مهمة '${task.title}' بعد جلسة تركيز $elapsedMinutes دقيقة! ✨"
+          } else {
+            customNotification = "ممتاز! 🎯 تم تسجيل جلسة تركيز مدتها $elapsedMinutes دقيقة لمهمة '${task.title}'!"
+          }
+        }
+      }
+      FocusAttachType.GOAL_TASK -> {
+        val goalId = attachment.goalId
+        if (goalId != null) {
+          val goal = repository.goals.value.find { it.id == goalId }
+          val task = goal?.tasks?.find { it.id == attachment.id }
+          if (task != null && !task.isCompleted) {
+            repository.toggleGoalTask(goalId, task.id)
+            customNotification = "إنجاز مبهر! 🎯 تم إتمام مهمة '${task.title}' لهدف '${goal.title}' بعد جلسة $elapsedMinutes دقيقة! 🚀"
+          } else {
+            customNotification = "أحسنت! 🎯 تم إنجاز جلسة تركيز $elapsedMinutes دقيقة لمهام الهدف!"
+          }
+        }
+      }
+      FocusAttachType.NONE -> {
+        customNotification = "عاش يا بطل! 🌟 أتممت جلسة تركيز عميقة بنجاح ($elapsedMinutes دقيقة)! استمر في هذا الزخم! 🔥"
+      }
+    }
+
+    _uiState.update { current ->
+      current.copy(
+        isFocusTimerRunning = false,
+        focusRemainingSeconds = current.focusTotalSeconds,
+        focusSessionsCompletedToday = current.focusSessionsCompletedToday + 1,
+        focusTotalMinutesToday = current.focusTotalMinutesToday + elapsedMinutes,
+        notificationMessage = customNotification
+      )
+    }
+  }
+
+  fun setFocusAttachment(attachment: FocusAttachment) {
+    _uiState.update {
+      it.copy(
+        focusAttachment = attachment,
+        isAttachPickerVisible = false,
+        notificationMessage = "تم ربط الجلسة بـ: ${attachment.title} 🔗"
+      )
+    }
+  }
+
+  fun clearFocusAttachment() {
+    _uiState.update {
+      it.copy(
+        focusAttachment = FocusAttachment(
+          type = FocusAttachType.NONE,
+          title = "جلسة تركيز حرة",
+          iconEmoji = "🎯"
+        ),
+        notificationMessage = "تم فك الارتباط، الجلسة الآن حرة 🎯"
+      )
+    }
+  }
+
+  fun setAmbientSound(soundType: AmbientSoundType) {
+    _uiState.update { it.copy(selectedAmbientSound = soundType) }
+    if (_uiState.value.isFocusTimerRunning) {
+      soundManager.playSound(soundType)
+    }
+  }
+
+  fun toggleAttachPicker(visible: Boolean) {
+    _uiState.update { it.copy(isAttachPickerVisible = visible) }
+  }
+
+  fun toggleCustomDurationDialog(visible: Boolean) {
+    _uiState.update { it.copy(isCustomDurationDialogVisible = visible) }
+  }
+
+  fun toggleFlipClockFullScreen(fullscreen: Boolean) {
+    _uiState.update { it.copy(isFlipClockFullScreen = fullscreen) }
+  }
+
+  override fun onCleared() {
+    super.onCleared()
+    focusTimerJob?.cancel()
+    soundManager.stopSound()
   }
 }

@@ -1,12 +1,19 @@
 package com.example.viewmodel
 
+import com.example.model.AmbientSoundType
+import com.example.model.CalendarViewMode
 import com.example.model.DailyAnalytics
+import com.example.model.DaySummaryHistory
+import com.example.model.FocusAttachment
+import com.example.model.FocusTimerMode
 import com.example.model.Goal
 import com.example.model.Habit
+import com.example.model.Note
 import com.example.model.QuickAddType
 import com.example.model.ScreenDestination
 import com.example.model.Task
 import com.example.model.User
+import com.example.model.getTodayDateString
 
 enum class GoalFilter(val titleArabic: String) {
   ALL("الكل"),
@@ -62,10 +69,46 @@ data class MyOSUiState(
   val isEditNameDialogVisible: Boolean = false,
   val selectedHabitToLog: Habit? = null,
   val selectedHabitToPause: Habit? = null,
+  val selectedCalendarDate: String = getTodayDateString(),
+  val calendarViewMode: CalendarViewMode = CalendarViewMode.MONTH,
+  val selectedDaySummary: DaySummaryHistory? = null,
+  val notes: List<Note> = emptyList(),
+  val activeNoteTag: String = "الكل",
+  val noteSearchQuery: String = "",
+  val isCreateNoteSheetVisible: Boolean = false,
+  val editingNote: Note? = null,
+  val focusTimerMode: FocusTimerMode = FocusTimerMode.POMODORO,
+  val focusTotalSeconds: Int = 25 * 60,
+  val focusRemainingSeconds: Int = 25 * 60,
+  val isFocusTimerRunning: Boolean = false,
+  val focusAttachment: FocusAttachment = FocusAttachment(),
+  val selectedAmbientSound: AmbientSoundType = AmbientSoundType.NONE,
+  val isAttachPickerVisible: Boolean = false,
+  val isCustomDurationDialogVisible: Boolean = false,
+  val isFlipClockFullScreen: Boolean = false,
+  val focusSessionsCompletedToday: Int = 2,
+  val focusTotalMinutesToday: Int = 50,
   val notificationMessage: String? = null
 ) {
   val selectedGoal: Goal?
     get() = goals.find { it.id == selectedGoalId }
+
+  val filteredNotes: List<Note>
+    get() {
+      val query = noteSearchQuery.trim()
+      return notes
+        .filter { note ->
+          val matchesTag = activeNoteTag == "الكل" || note.tag.contains(activeNoteTag)
+          val matchesSearch = query.isEmpty() ||
+            note.title.contains(query, ignoreCase = true) ||
+            note.content.contains(query, ignoreCase = true)
+          matchesTag && matchesSearch
+        }
+        .sortedWith(
+          compareByDescending<Note> { it.isPinned }
+            .thenByDescending { it.updatedAt }
+        )
+    }
 
   val filteredGoals: List<Goal>
     get() = when (activeGoalFilter) {
