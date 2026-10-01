@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -64,23 +65,24 @@ fun GoalOverviewCard(
 
   val isCompleted = goal.status == GoalStatus.COMPLETED
   val isPaused = goal.status == GoalStatus.PAUSED
+  val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f || MaterialTheme.colorScheme.background.red < 0.2f
 
   val (statusText, statusTextColor, statusBgColor) = when (goal.status) {
-    GoalStatus.ACTIVE -> Triple("قيد التنفيذ", BrightBlue, Color(0xFFEFF6FF))
-    GoalStatus.PAUSED -> Triple("متوقف مؤقتاً", Color(0xFFD97706), Color(0xFFFFFBEB))
-    GoalStatus.COMPLETED -> Triple("مكتمل", HabitEmerald, HabitEmeraldBg)
+    GoalStatus.ACTIVE -> Triple("قيد التنفيذ", BrightBlue, if (isDark) Color(0xFF152642) else Color(0xFFEFF6FF))
+    GoalStatus.PAUSED -> Triple("متوقف مؤقتاً", if (isDark) Color(0xFFFBBF24) else Color(0xFFD97706), if (isDark) Color(0xFF382A13) else Color(0xFFFFFBEB))
+    GoalStatus.COMPLETED -> Triple("مكتمل", HabitEmerald, if (isDark) Color(0xFF122E25) else HabitEmeraldBg)
   }
 
   val activeProgressColor = when {
     isCompleted -> HabitEmerald
-    isPaused -> Color(0xFFD97706)
+    isPaused -> if (isDark) Color(0xFFFBBF24) else Color(0xFFD97706)
     else -> BrightBlue
   }
 
   val activeTrackColor = when {
-    isCompleted -> HabitEmeraldTrack
-    isPaused -> Color(0xFFFEF3C7)
-    else -> GoalBlueTrack
+    isCompleted -> if (isDark) HabitEmerald.copy(alpha = 0.2f) else HabitEmeraldTrack
+    isPaused -> if (isDark) Color(0xFFFBBF24).copy(alpha = 0.15f) else Color(0xFFFEF3C7)
+    else -> if (isDark) BrightBlue.copy(alpha = 0.15f) else GoalBlueTrack
   }
 
   Card(

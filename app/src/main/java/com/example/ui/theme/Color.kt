@@ -3,6 +3,7 @@ package com.example.ui.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 
 // Primary brand colors from MyOS specification
 val ElectricCyan = Color(0xFF22D3EE)
@@ -118,3 +119,51 @@ val RestLavenderBg: Color
 
 val RestLavenderText: Color
   @Composable get() = if (MaterialTheme.colorScheme.background.red < 0.2f) RestLavenderTextDark else LightRestLavenderText
+
+val isAppInDarkTheme: Boolean
+  @Composable get() = MaterialTheme.colorScheme.background.red < 0.2f || MaterialTheme.colorScheme.surface.luminance() < 0.5f
+
+// Theme-aware analytics backgrounds
+val AnalyticsProgressEmeraldBgTheme: Color
+  @Composable get() = if (isAppInDarkTheme) Color(0xFF132D22) else AnalyticsProgressEmeraldBg
+
+val AnalyticsShortfallRedBgTheme: Color
+  @Composable get() = if (isAppInDarkTheme) Color(0xFF3B1A1A) else AnalyticsShortfallRedBg
+
+val AnalyticsRestAmberBgTheme: Color
+  @Composable get() = if (isAppInDarkTheme) Color(0xFF382A13) else AnalyticsRestAmberBg
+
+val AnalyticsPostponeSkyBgTheme: Color
+  @Composable get() = if (isAppInDarkTheme) Color(0xFF14243B) else AnalyticsPostponeSkyBg
+
+val AnalyticsFocusVioletBgTheme: Color
+  @Composable get() = if (isAppInDarkTheme) Color(0xFF271C3F) else AnalyticsFocusVioletBg
+
+// Note card colors for Light vs Dark theme
+fun getNoteCardBackgroundColor(colorLong: Long, isDark: Boolean): Color {
+  if (!isDark) return Color(colorLong)
+  return when (colorLong) {
+    0xFFFFFBEB -> Color(0xFF282210) // Warm Yellow -> Deep Warm Amber
+    0xFFEFF6FF -> Color(0xFF132338) // Sky Blue -> Deep Navy Blue
+    0xFFECFDF5 -> Color(0xFF11291E) // Mint/Emerald -> Deep Emerald Pine
+    0xFFFAF5FF -> Color(0xFF231836) // Soft Violet -> Deep Violet Night
+    0xFFFFF1F2 -> Color(0xFF2E1522) // Soft Rose -> Deep Rose Wine
+    0xFFFFF7ED -> Color(0xFF2B1B12) // Peach -> Deep Warm Bronze
+    0xFFF8FAFC -> Color(0xFF182030) // Light Slate -> Dark Slate Card
+    else -> Color(0xFF1E2638)
+  }
+}
+
+fun getNoteCardBorderColor(colorLong: Long, isDark: Boolean): Color {
+  if (!isDark) return Color(0xFFE2E8F0).copy(alpha = 0.8f)
+  return when (colorLong) {
+    0xFFFFFBEB -> Color(0xFFF59E0B).copy(alpha = 0.4f)
+    0xFFEFF6FF -> Color(0xFF3B82F6).copy(alpha = 0.4f)
+    0xFFECFDF5 -> Color(0xFF10B981).copy(alpha = 0.4f)
+    0xFFFAF5FF -> Color(0xFF8B5CF6).copy(alpha = 0.4f)
+    0xFFFFF1F2 -> Color(0xFFF43F5E).copy(alpha = 0.4f)
+    0xFFFFF7ED -> Color(0xFFF97316).copy(alpha = 0.4f)
+    0xFFF8FAFC -> Color(0xFF2E394E)
+    else -> Color(0xFF2E394E)
+  }
+}

@@ -47,6 +47,8 @@ import com.example.ui.theme.SurfaceWhite
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.isAppInDarkTheme
+import androidx.compose.foundation.border
 
 @Composable
 fun AnalyticsActivityBarChart(
@@ -55,9 +57,13 @@ fun AnalyticsActivityBarChart(
   modifier: Modifier = Modifier
 ) {
   var selectedBarIndex by remember { mutableStateOf<Int?>(null) }
+  val isDark = isAppInDarkTheme
 
   Card(
-    modifier = modifier.fillMaxWidth(),
+    modifier = modifier
+      .fillMaxWidth()
+      .clip(RoundedCornerShape(24.dp))
+      .border(1.dp, BorderLight.copy(alpha = 0.7f), RoundedCornerShape(24.dp)),
     shape = RoundedCornerShape(24.dp),
     colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -131,7 +137,7 @@ fun AnalyticsActivityBarChart(
           for (g in 0..gridLineCount) {
             val y = canvasHeight * (g.toFloat() / gridLineCount)
             drawLine(
-              color = Color(0xFFF1F5F9),
+              color = if (isDark) Color(0xFF222B3D) else Color(0xFFF1F5F9),
               start = Offset(0f, y),
               end = Offset(canvasWidth, y),
               strokeWidth = 1.dp.toPx()
@@ -154,8 +160,13 @@ fun AnalyticsActivityBarChart(
             val isSelected = selectedBarIndex == i
 
             // Draw Background Bar Track
+            val trackCol = if (isDark) {
+              if (isSelected) Color(0xFF2E394E) else Color(0xFF1E2638)
+            } else {
+              if (isSelected) Color(0xFFE2E8F0) else Color(0xFFF8FAFC)
+            }
             drawRoundRect(
-              color = if (isSelected) Color(0xFFE2E8F0) else Color(0xFFF8FAFC),
+              color = trackCol,
               topLeft = Offset(barLeft, 0f),
               size = Size(barWidth, canvasHeight),
               cornerRadius = CornerRadius(6.dp.toPx(), 6.dp.toPx())
@@ -230,7 +241,7 @@ fun AnalyticsActivityBarChart(
             modifier = Modifier
               .fillMaxWidth()
               .clip(RoundedCornerShape(12.dp))
-              .background(Color(0xFFEFF6FF))
+              .background(if (isDark) Color(0xFF132338) else Color(0xFFEFF6FF))
               .padding(12.dp)
           ) {
             Row(

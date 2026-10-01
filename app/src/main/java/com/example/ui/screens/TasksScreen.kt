@@ -86,6 +86,7 @@ import com.example.ui.theme.TaskVioletBg
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TextWhite
+import com.example.ui.theme.isAppInDarkTheme
 import com.example.viewmodel.MyOSUiState
 import com.example.viewmodel.TaskFilter
 import com.example.viewmodel.TaskSortOrder
@@ -394,15 +395,22 @@ fun TasksScreen(
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+              val isDark = isAppInDarkTheme
               TaskSortOrder.entries.forEach { sortOrder ->
                 val isSelected = uiState.taskSortOrder == sortOrder
+                val sortBg = if (isSelected) {
+                  if (isDark) Color(0xFF2E1C4E) else Color(0xFFEDE9FE)
+                } else {
+                  if (isDark) Color(0xFF1E2638) else Color(0xFFF8FAFC)
+                }
+                val sortBorder = if (isSelected) TaskViolet.copy(alpha = 0.5f) else BorderLight
                 Box(
                   modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .background(if (isSelected) Color(0xFFEDE9FE) else Color(0xFFF8FAFC))
+                    .background(sortBg)
                     .border(
                       width = 1.dp,
-                      color = if (isSelected) TaskViolet.copy(alpha = 0.5f) else BorderLight,
+                      color = sortBorder,
                       shape = RoundedCornerShape(8.dp)
                     )
                     .clickable { onSetTaskSortOrder(sortOrder) }
@@ -415,7 +423,7 @@ fun TasksScreen(
                       fontSize = 11.sp,
                       fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                     ),
-                    color = if (isSelected) TaskViolet else TextSecondary
+                    color = if (isSelected) (if (isDark) Color(0xFFA78BFA) else TaskViolet) else TextSecondary
                   )
                 }
               }

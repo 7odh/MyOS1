@@ -47,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,6 +60,7 @@ import com.example.ui.theme.SurfaceWhite
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TextWhite
+import com.example.ui.theme.getNoteCardBackgroundColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,11 +87,13 @@ fun CreateNoteBottomSheet(
   var isPinned by remember(editingNote) { mutableStateOf(editingNote?.isPinned ?: false) }
 
   var titleError by remember { mutableStateOf(false) }
+  val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f || MaterialTheme.colorScheme.background.red < 0.2f
+  val sheetContainerColor = getNoteCardBackgroundColor(selectedColor, isDark)
 
   ModalBottomSheet(
     onDismissRequest = onDismiss,
     sheetState = sheetState,
-    containerColor = Color(selectedColor),
+    containerColor = sheetContainerColor,
     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
   ) {
     Column(
@@ -111,7 +115,7 @@ fun CreateNoteBottomSheet(
               fontWeight = FontWeight.Bold,
               fontSize = 17.sp
             ),
-            color = TextPrimary
+            color = MaterialTheme.colorScheme.onSurface
           )
         }
 
@@ -160,10 +164,12 @@ fun CreateNoteBottomSheet(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
         colors = OutlinedTextFieldDefaults.colors(
-          focusedContainerColor = SurfaceWhite.copy(alpha = 0.9f),
-          unfocusedContainerColor = SurfaceWhite.copy(alpha = 0.7f),
+          focusedContainerColor = if (isDark) Color(0xFF181F2E).copy(alpha = 0.7f) else SurfaceWhite.copy(alpha = 0.9f),
+          unfocusedContainerColor = if (isDark) Color(0xFF181F2E).copy(alpha = 0.5f) else SurfaceWhite.copy(alpha = 0.7f),
+          focusedTextColor = MaterialTheme.colorScheme.onSurface,
+          unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
           focusedBorderColor = BrightBlue,
-          unfocusedBorderColor = BorderLight
+          unfocusedBorderColor = if (isDark) Color(0xFF2E394E) else BorderLight
         ),
         singleLine = true
       )
@@ -180,10 +186,12 @@ fun CreateNoteBottomSheet(
           .height(140.dp),
         shape = RoundedCornerShape(14.dp),
         colors = OutlinedTextFieldDefaults.colors(
-          focusedContainerColor = SurfaceWhite.copy(alpha = 0.9f),
-          unfocusedContainerColor = SurfaceWhite.copy(alpha = 0.7f),
+          focusedContainerColor = if (isDark) Color(0xFF181F2E).copy(alpha = 0.7f) else SurfaceWhite.copy(alpha = 0.9f),
+          unfocusedContainerColor = if (isDark) Color(0xFF181F2E).copy(alpha = 0.5f) else SurfaceWhite.copy(alpha = 0.7f),
+          focusedTextColor = MaterialTheme.colorScheme.onSurface,
+          unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
           focusedBorderColor = BrightBlue,
-          unfocusedBorderColor = BorderLight
+          unfocusedBorderColor = if (isDark) Color(0xFF2E394E) else BorderLight
         ),
         maxLines = 8
       )
@@ -194,7 +202,7 @@ fun CreateNoteBottomSheet(
       Text(
         text = "تصنيف الفكرة في المخزن:",
         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
-        color = TextPrimary
+        color = MaterialTheme.colorScheme.onSurface
       )
       Spacer(modifier = Modifier.height(6.dp))
 
@@ -220,8 +228,8 @@ fun CreateNoteBottomSheet(
             colors = FilterChipDefaults.filterChipColors(
               selectedContainerColor = tagItem.color,
               selectedLabelColor = TextWhite,
-              containerColor = SurfaceWhite.copy(alpha = 0.8f),
-              labelColor = TextPrimary
+              containerColor = if (isDark) Color(0xFF1E2638) else SurfaceWhite.copy(alpha = 0.8f),
+              labelColor = MaterialTheme.colorScheme.onSurface
             ),
             shape = RoundedCornerShape(12.dp),
             border = null
@@ -235,7 +243,7 @@ fun CreateNoteBottomSheet(
       Text(
         text = "لون الملاحظة:",
         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
-        color = TextPrimary
+        color = MaterialTheme.colorScheme.onSurface
       )
       Spacer(modifier = Modifier.height(6.dp))
 
@@ -246,14 +254,16 @@ fun CreateNoteBottomSheet(
       ) {
         NotePastelColors.forEach { noteColor ->
           val isColorSelected = selectedColor == noteColor.colorLong
+          val previewColor = if (isDark) getNoteCardBackgroundColor(noteColor.colorLong, true) else Color(noteColor.colorLong)
+          val previewBorder = if (isColorSelected) BrightBlue else (if (isDark) Color(0xFF475569) else BorderLight)
           Box(
             modifier = Modifier
               .size(32.dp)
               .clip(CircleShape)
-              .background(Color(noteColor.colorLong))
+              .background(previewColor)
               .border(
                 width = if (isColorSelected) 2.5.dp else 1.dp,
-                color = if (isColorSelected) BrightBlue else BorderLight,
+                color = previewBorder,
                 shape = CircleShape
               )
               .clickable { selectedColor = noteColor.colorLong },
@@ -263,7 +273,7 @@ fun CreateNoteBottomSheet(
               Icon(
                 imageVector = Icons.Default.Check,
                 contentDescription = "محدد",
-                tint = BrightBlue,
+                tint = if (isDark) TextWhite else BrightBlue,
                 modifier = Modifier.size(16.dp)
               )
             }

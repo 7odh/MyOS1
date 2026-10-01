@@ -45,12 +45,15 @@ import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TextWhite
+import com.example.ui.theme.isAppInDarkTheme
+import androidx.compose.foundation.border
 
 @Composable
 fun AnalyticsOverviewCard(
   report: AnalyticsReport,
   modifier: Modifier = Modifier
 ) {
+  val isDark = isAppInDarkTheme
   val animatedProgress by animateFloatAsState(
     targetValue = report.productivityScore / 100f,
     animationSpec = tween(durationMillis = 900),
@@ -58,7 +61,10 @@ fun AnalyticsOverviewCard(
   )
 
   Card(
-    modifier = modifier.fillMaxWidth(),
+    modifier = modifier
+      .fillMaxWidth()
+      .clip(RoundedCornerShape(24.dp))
+      .border(1.dp, BorderLight.copy(alpha = 0.7f), RoundedCornerShape(24.dp)),
     shape = RoundedCornerShape(24.dp),
     colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -131,7 +137,7 @@ fun AnalyticsOverviewCard(
 
             // Background Track
             drawArc(
-              color = Color(0xFFF1F5F9),
+              color = if (isDark) Color(0xFF222B3D) else Color(0xFFF1F5F9),
               startAngle = -90f,
               sweepAngle = 360f,
               useCenter = false,
@@ -192,14 +198,14 @@ fun AnalyticsOverviewCard(
               label = "المكتمل",
               value = "${report.totalCompletedItems}",
               color = AnalyticsProgressEmerald,
-              bgColor = Color(0xFFECFDF5),
+              bgColor = if (isDark) Color(0xFF132D22) else Color(0xFFECFDF5),
               modifier = Modifier.weight(1f)
             )
             MetricTile(
               label = "المخطط",
               value = "${report.totalPlannedItems}",
               color = BrightBlue,
-              bgColor = Color(0xFFEFF6FF),
+              bgColor = if (isDark) Color(0xFF132338) else Color(0xFFEFF6FF),
               modifier = Modifier.weight(1f)
             )
           }
@@ -212,14 +218,14 @@ fun AnalyticsOverviewCard(
               label = "نسبة الإنجاز",
               value = "${report.overallCompletionRate}%",
               color = ElectricViolet,
-              bgColor = Color(0xFFF5F3FF),
+              bgColor = if (isDark) Color(0xFF231836) else Color(0xFFF5F3FF),
               modifier = Modifier.weight(1f)
             )
             MetricTile(
               label = "دقائق التركيز",
               value = "${report.focusTotalMinutes}د",
               color = Color(0xFF0284C7),
-              bgColor = Color(0xFFE0F2FE),
+              bgColor = if (isDark) Color(0xFF14243B) else Color(0xFFE0F2FE),
               modifier = Modifier.weight(1f)
             )
           }

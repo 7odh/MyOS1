@@ -70,6 +70,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -103,6 +104,7 @@ import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TextWhite
+import com.example.ui.theme.isAppInDarkTheme
 import com.example.viewmodel.MyOSUiState
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -323,8 +325,8 @@ fun CalendarScreen(
                   colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = BrightBlue,
                     selectedLabelColor = TextWhite,
-                    containerColor = Color(0xFFF1F5F9),
-                    labelColor = TextPrimary
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    labelColor = MaterialTheme.colorScheme.onSurface
                   ),
                   shape = RoundedCornerShape(20.dp),
                   border = null,
@@ -690,10 +692,11 @@ private fun WeekCalendarView(
         val isSelected = dateStr == selectedDate
         val isToday = dateStr == todayDate
 
+        val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f || MaterialTheme.colorScheme.background.red < 0.2f
         val bgCol = when {
           isSelected -> BrightBlue
           isToday -> GoalBlueBg
-          else -> Color(0xFFF8FAFC)
+          else -> if (isDark) Color(0xFF1E2638) else Color(0xFFF8FAFC)
         }
         val textCol = when {
           isSelected -> TextWhite
@@ -851,6 +854,7 @@ private fun DayDetailSection(
   onIncrementHabit: (String) -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val isDark = isAppInDarkTheme
   Column(
     modifier = modifier
       .fillMaxWidth()
@@ -897,8 +901,16 @@ private fun DayDetailSection(
           // Status Badge (اليوم / سجل تاريخي / قادم)
           val (badgeText, badgeBg, badgeColor) = when {
             summary.isToday -> Triple("اليوم الحالي ⚡", GoalBlueBg, BrightBlue)
-            summary.isPast -> Triple("أرشيف السجلات 📜", Color(0xFFFEF3C7), Color(0xFFB45309))
-            else -> Triple("مستقبل مجدول ⏳", Color(0xFFF1F5F9), TextSecondary)
+            summary.isPast -> Triple(
+              "أرشيف السجلات 📜",
+              if (isDark) Color(0xFF382A13) else Color(0xFFFEF3C7),
+              if (isDark) Color(0xFFFBBF24) else Color(0xFFB45309)
+            )
+            else -> Triple(
+              "مستقبل مجدول ⏳",
+              if (isDark) Color(0xFF1E2638) else Color(0xFFF1F5F9),
+              TextSecondary
+            )
           }
 
           Box(
@@ -966,7 +978,7 @@ private fun DayDetailSection(
             .height(8.dp)
             .clip(RoundedCornerShape(4.dp)),
           color = if (summary.completionRatePercentage >= 75) HabitEmerald else BrightBlue,
-          trackColor = Color(0xFFF1F5F9),
+          trackColor = if (isDark) Color(0xFF222B3D) else Color(0xFFF1F5F9),
           strokeCap = StrokeCap.Round
         )
 
@@ -988,8 +1000,8 @@ private fun DayDetailSection(
             StatBadge(
               label = "فاتك / لم يُنجز",
               count = summary.missedItemsCount,
-              bgColor = Color(0xFFFEF2F2),
-              textColor = Color(0xFFEF4444),
+              bgColor = if (isDark) Color(0xFF3B1A1A) else Color(0xFFFEF2F2),
+              textColor = if (isDark) Color(0xFFF87171) else Color(0xFFEF4444),
               modifier = Modifier.weight(1f)
             )
           }
@@ -997,8 +1009,8 @@ private fun DayDetailSection(
             StatBadge(
               label = "مُرحّل",
               count = summary.postponedTasksCount,
-              bgColor = Color(0xFFFFFBEB),
-              textColor = Color(0xFFD97706),
+              bgColor = if (isDark) Color(0xFF382A13) else Color(0xFFFFFBEB),
+              textColor = if (isDark) Color(0xFFFBBF24) else Color(0xFFD97706),
               modifier = Modifier.weight(1f)
             )
           }
@@ -1162,14 +1174,26 @@ private fun DayHabitRow(
   isToday: Boolean,
   onIncrement: () -> Unit
 ) {
+  val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f || MaterialTheme.colorScheme.background.red < 0.2f
+  val rowBg = if (habit.isCompleted) {
+    if (isDark) Color(0xFF132A22) else Color(0xFFF9FDFB)
+  } else {
+    if (isDark) Color(0xFF1A2232) else Color(0xFFF8FAFC)
+  }
+  val rowBorder = if (habit.isCompleted) {
+    HabitEmerald.copy(alpha = if (isDark) 0.5f else 0.3f)
+  } else {
+    BorderLight.copy(alpha = if (isDark) 0.4f else 0.6f)
+  }
+
   Box(
     modifier = Modifier
       .fillMaxWidth()
       .clip(RoundedCornerShape(14.dp))
-      .background(if (habit.isCompleted) Color(0xFFF9FDFB) else Color(0xFFF8FAFC))
+      .background(rowBg)
       .border(
         width = 1.dp,
-        color = if (habit.isCompleted) HabitEmerald.copy(alpha = 0.3f) else BorderLight.copy(alpha = 0.6f),
+        color = rowBorder,
         shape = RoundedCornerShape(14.dp)
       )
       .padding(10.dp)
@@ -1250,7 +1274,7 @@ private fun DayHabitRow(
           .height(4.dp)
           .clip(RoundedCornerShape(2.dp)),
         color = if (habit.isCompleted) HabitEmerald else Color(0xFFD97706),
-        trackColor = Color(0xFFE2E8F0)
+        trackColor = if (isDark) Color(0xFF222B3D) else Color(0xFFE2E8F0)
       )
     }
   }
@@ -1442,14 +1466,26 @@ private fun DayTaskCardItem(
     label = "taskCheckBg"
   )
 
+  val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f || MaterialTheme.colorScheme.background.red < 0.2f
+  val taskCardBg = if (isCompleted) {
+    if (isDark) Color(0xFF132A22) else Color(0xFFF9FDFB)
+  } else {
+    if (isDark) Color(0xFF1A2232) else Color(0xFFF8FAFC)
+  }
+  val taskCardBorder = if (isCompleted) {
+    HabitEmerald.copy(alpha = if (isDark) 0.5f else 0.3f)
+  } else {
+    BorderLight.copy(alpha = if (isDark) 0.4f else 0.6f)
+  }
+
   Box(
     modifier = Modifier
       .fillMaxWidth()
       .clip(RoundedCornerShape(12.dp))
-      .background(if (isCompleted) Color(0xFFF9FDFB) else Color(0xFFF8FAFC))
+      .background(taskCardBg)
       .border(
         width = 1.dp,
-        color = if (isCompleted) HabitEmerald.copy(alpha = 0.3f) else BorderLight.copy(alpha = 0.6f),
+        color = taskCardBorder,
         shape = RoundedCornerShape(12.dp)
       )
       .padding(horizontal = 10.dp, vertical = 8.dp)
@@ -1528,7 +1564,7 @@ private fun DayTaskCardItem(
         Box(
           modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFFEFF6FF))
+            .background(if (isDark) Color(0xFF152642) else Color(0xFFEFF6FF))
             .clickable(onClick = onPostpone)
             .padding(horizontal = 6.dp, vertical = 3.dp)
         ) {
@@ -1545,7 +1581,7 @@ private fun DayTaskCardItem(
         Box(
           modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFFFFFBEB))
+            .background(if (isDark) Color(0xFF382A13) else Color(0xFFFFFBEB))
             .padding(horizontal = 6.dp, vertical = 2.dp)
         ) {
           Text(
@@ -1554,7 +1590,7 @@ private fun DayTaskCardItem(
               fontSize = 9.sp,
               fontWeight = FontWeight.Bold
             ),
-            color = Color(0xFFD97706)
+            color = if (isDark) Color(0xFFFBBF24) else Color(0xFFD97706)
           )
         }
       }

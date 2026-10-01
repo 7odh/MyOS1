@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -72,18 +73,25 @@ fun TaskDetailCard(
     label = "taskCheckBorder"
   )
 
+  val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f || MaterialTheme.colorScheme.background.red < 0.2f
+  val cardContainer = if (task.isCompleted) {
+    if (isDark) Color(0xFF132A22) else Color(0xFFF9FDFB)
+  } else {
+    MaterialTheme.colorScheme.surface
+  }
+
   Card(
     modifier = modifier
       .fillMaxWidth()
       .clip(RoundedCornerShape(16.dp))
       .border(
         width = 1.dp,
-        color = if (task.isCompleted) HabitEmerald.copy(alpha = 0.3f) else BorderLight.copy(alpha = 0.8f),
+        color = if (task.isCompleted) HabitEmerald.copy(alpha = if (isDark) 0.5f else 0.3f) else MaterialTheme.colorScheme.outlineVariant,
         shape = RoundedCornerShape(16.dp)
       ),
     shape = RoundedCornerShape(16.dp),
     colors = CardDefaults.cardColors(
-      containerColor = if (task.isCompleted) Color(0xFFF9FDFB) else SurfaceCard
+      containerColor = cardContainer
     ),
     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
   ) {
@@ -161,7 +169,7 @@ fun TaskDetailCard(
             modifier = Modifier
               .size(28.dp)
               .clip(CircleShape)
-              .background(Color(0xFFEFF6FF))
+              .background(if (isDark) Color(0xFF1B2740) else Color(0xFFEFF6FF))
               .clickable(onClick = onEdit),
             contentAlignment = Alignment.Center
           ) {
@@ -179,7 +187,7 @@ fun TaskDetailCard(
             modifier = Modifier
               .size(28.dp)
               .clip(CircleShape)
-              .background(Color(0xFFFEE2E2))
+              .background(if (isDark) Color(0xFF3B1A1A) else Color(0xFFFEE2E2))
               .clickable(onClick = onDelete),
             contentAlignment = Alignment.Center
           ) {
@@ -204,9 +212,9 @@ fun TaskDetailCard(
         // Schedule Badge
         val (scheduleText, scheduleBg, scheduleColor) = when (task.schedule) {
           TaskSchedule.TODAY -> Triple("اليوم ⚡", TaskVioletBg, TaskViolet)
-          TaskSchedule.TOMORROW -> Triple("غداً 📅", Color(0xFFEFF6FF), Color(0xFF2563EB))
-          TaskSchedule.FUTURE -> Triple("قريباً ⏳", Color(0xFFF0FDF4), Color(0xFF16A34A))
-          TaskSchedule.NO_DATE -> Triple("بدون موعد 📭", Color(0xFFF1F5F9), TextSecondary)
+          TaskSchedule.TOMORROW -> Triple("غداً 📅", if (isDark) Color(0xFF152642) else Color(0xFFEFF6FF), BrightBlue)
+          TaskSchedule.FUTURE -> Triple("قريباً ⏳", if (isDark) Color(0xFF11291E) else Color(0xFFF0FDF4), HabitEmerald)
+          TaskSchedule.NO_DATE -> Triple("بدون موعد 📭", if (isDark) Color(0xFF1E2638) else Color(0xFFF1F5F9), TextSecondary)
         }
 
         Box(
@@ -227,10 +235,10 @@ fun TaskDetailCard(
 
         // Priority Badge
         val (pText, pBg, pColor) = when (task.priority) {
-          Priority.HIGH -> Triple("أولوية عالية", Color(0xFFFEF2F2), PriorityHigh)
-          Priority.MEDIUM -> Triple("أولوية متوسطة", Color(0xFFFFFBEB), Color(0xFFD97706))
-          Priority.LOW -> Triple("أولوية منخفضة", Color(0xFFF1F5F9), PriorityLow)
-          Priority.NONE -> Triple("بدون أولوية", Color(0xFFF8FAFC), TextSecondary)
+          Priority.HIGH -> Triple("أولوية عالية", if (isDark) Color(0xFF3B1A1A) else Color(0xFFFEF2F2), PriorityHigh)
+          Priority.MEDIUM -> Triple("أولوية متوسطة", if (isDark) Color(0xFF382A13) else Color(0xFFFFFBEB), Color(0xFFF59E0B))
+          Priority.LOW -> Triple("أولوية منخفضة", if (isDark) Color(0xFF1E2838) else Color(0xFFF1F5F9), PriorityLow)
+          Priority.NONE -> Triple("بدون أولوية", if (isDark) Color(0xFF182030) else Color(0xFFF8FAFC), TextSecondary)
         }
 
         Box(
@@ -254,8 +262,8 @@ fun TaskDetailCard(
           Box(
             modifier = Modifier
               .clip(RoundedCornerShape(8.dp))
-              .background(Color(0xFFF8FAFC))
-              .border(0.5.dp, BorderLight, RoundedCornerShape(8.dp))
+              .background(if (isDark) Color(0xFF1E2638) else Color(0xFFF8FAFC))
+              .border(0.5.dp, if (isDark) Color(0xFF2E394E) else BorderLight, RoundedCornerShape(8.dp))
               .padding(horizontal = 8.dp, vertical = 3.dp)
           ) {
             Text(

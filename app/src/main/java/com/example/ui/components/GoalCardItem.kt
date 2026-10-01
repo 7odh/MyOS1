@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -182,8 +183,17 @@ private fun GoalTaskChip(
   onToggle: () -> Unit,
   modifier: Modifier = Modifier
 ) {
-  val chipBgColor = if (task.isCompleted) Color(0xFFF0FDF4) else Color(0xFFF8FAFC)
-  val chipBorderColor = if (task.isCompleted) HabitEmerald.copy(alpha = 0.5f) else BorderLight
+  val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f || MaterialTheme.colorScheme.background.red < 0.2f
+  val chipBgColor = if (task.isCompleted) {
+    if (isDark) Color(0xFF132A22) else Color(0xFFF0FDF4)
+  } else {
+    if (isDark) Color(0xFF1E2638) else Color(0xFFF8FAFC)
+  }
+  val chipBorderColor = if (task.isCompleted) {
+    HabitEmerald.copy(alpha = if (isDark) 0.5f else 0.4f)
+  } else {
+    if (isDark) Color(0xFF2E394E) else BorderLight
+  }
 
   Row(
     modifier = modifier
@@ -202,7 +212,7 @@ private fun GoalTaskChip(
         .background(if (task.isCompleted) HabitEmerald else Color.Transparent)
         .border(
           1.dp,
-          if (task.isCompleted) HabitEmerald else BorderLight,
+          if (task.isCompleted) HabitEmerald else (if (isDark) Color(0xFF475569) else BorderLight),
           CircleShape
         ),
       contentAlignment = Alignment.Center

@@ -83,6 +83,9 @@ import com.example.ui.theme.SurfaceWhite
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.getNoteCardBackgroundColor
+import com.example.ui.theme.isAppInDarkTheme
+import androidx.compose.foundation.border
 import com.example.viewmodel.MyOSUiState
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -185,7 +188,9 @@ fun SearchScreen(
               focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
               unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
               focusedBorderColor = BrightBlue,
-              unfocusedBorderColor = BorderLight
+              unfocusedBorderColor = BorderLight,
+              focusedTextColor = TextPrimary,
+              unfocusedTextColor = TextPrimary
             ),
             modifier = Modifier
               .weight(1f)
@@ -373,6 +378,7 @@ private fun EmptySearchDashboard(
               modifier = Modifier
                 .clip(RoundedCornerShape(12.dp))
                 .background(SurfaceWhite)
+                .border(1.dp, BorderLight.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
                 .clickable { onSelectRecent(search) }
                 .padding(horizontal = 12.dp, vertical = 7.dp)
             ) {
@@ -424,7 +430,10 @@ private fun EmptySearchDashboard(
 
     // Pro Tips Card
     Card(
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier
+        .fillMaxWidth()
+        .clip(RoundedCornerShape(16.dp))
+        .border(1.dp, BorderLight.copy(alpha = 0.6f), RoundedCornerShape(16.dp)),
       shape = RoundedCornerShape(16.dp),
       colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
       elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
@@ -467,6 +476,7 @@ private fun QuickSuggestionPill(
     modifier = modifier
       .clip(RoundedCornerShape(14.dp))
       .background(SurfaceWhite)
+      .border(1.dp, BorderLight.copy(alpha = 0.6f), RoundedCornerShape(14.dp))
       .clickable(onClick = onClick)
       .padding(12.dp)
   ) {
@@ -491,6 +501,7 @@ private fun QuickSuggestionPill(
 
 @Composable
 private fun NoResultsState(query: String) {
+  val isDark = isAppInDarkTheme
   Column(
     modifier = Modifier
       .fillMaxWidth()
@@ -502,7 +513,7 @@ private fun NoResultsState(query: String) {
       modifier = Modifier
         .size(72.dp)
         .clip(CircleShape)
-        .background(Color(0xFFEFF6FF)),
+        .background(if (isDark) Color(0xFF132338) else Color(0xFFEFF6FF)),
       contentAlignment = Alignment.Center
     ) {
       Text("🔍", fontSize = 32.sp)
@@ -539,7 +550,10 @@ private fun SearchResultCard(
   onToggleHabitBoolean: (String) -> Unit
 ) {
   Card(
-    modifier = Modifier.fillMaxWidth(),
+    modifier = Modifier
+      .fillMaxWidth()
+      .clip(RoundedCornerShape(16.dp))
+      .border(1.dp, BorderLight.copy(alpha = 0.7f), RoundedCornerShape(16.dp)),
     shape = RoundedCornerShape(16.dp),
     colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
@@ -643,10 +657,11 @@ private fun TaskSearchResultRow(
       PriorityBadge(priority = task.priority)
       if (!task.isCompleted && !task.isPostponed) {
         Spacer(modifier = Modifier.height(4.dp))
+        val isDark = isAppInDarkTheme
         Box(
           modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFFE0F2FE))
+            .background(if (isDark) Color(0xFF14243B) else Color(0xFFE0F2FE))
             .clickable(onClick = onPostpone)
             .padding(horizontal = 6.dp, vertical = 2.dp)
         ) {
@@ -723,6 +738,7 @@ private fun GoalSearchResultRow(
   onClick: () -> Unit
 ) {
   val goal = goalItem.goal
+  val isDark = isAppInDarkTheme
   Column(
     modifier = Modifier
       .fillMaxWidth()
@@ -778,7 +794,7 @@ private fun GoalSearchResultRow(
         .height(6.dp)
         .clip(RoundedCornerShape(3.dp)),
       color = BrightBlue,
-      trackColor = Color(0xFFF1F5F9),
+      trackColor = if (isDark) Color(0xFF222B3D) else Color(0xFFF1F5F9),
       strokeCap = StrokeCap.Round
     )
   }
@@ -787,10 +803,11 @@ private fun GoalSearchResultRow(
 @Composable
 private fun NoteSearchResultRow(noteItem: SearchResultItem.NoteItem) {
   val note = noteItem.note
+  val isDark = isAppInDarkTheme
   Column(
     modifier = Modifier
       .fillMaxWidth()
-      .background(Color(note.colorLong).copy(alpha = 0.4f))
+      .background(getNoteCardBackgroundColor(note.colorLong, isDark))
       .padding(14.dp)
   ) {
     Row(
@@ -811,7 +828,7 @@ private fun NoteSearchResultRow(noteItem: SearchResultItem.NoteItem) {
       Box(
         modifier = Modifier
           .clip(RoundedCornerShape(8.dp))
-          .background(Color.White.copy(alpha = 0.8f))
+          .background(if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color.White.copy(alpha = 0.8f))
           .padding(horizontal = 8.dp, vertical = 2.dp)
       ) {
         Text(
@@ -839,6 +856,7 @@ private fun CalendarSearchResultRow(
   calendarItem: SearchResultItem.CalendarItem,
   onClick: () -> Unit
 ) {
+  val isDark = isAppInDarkTheme
   Row(
     modifier = Modifier
       .fillMaxWidth()
@@ -869,7 +887,7 @@ private fun CalendarSearchResultRow(
     Box(
       modifier = Modifier
         .clip(RoundedCornerShape(8.dp))
-        .background(Color(0xFFECFDF5))
+        .background(if (isDark) Color(0xFF132D22) else Color(0xFFECFDF5))
         .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
       Text(

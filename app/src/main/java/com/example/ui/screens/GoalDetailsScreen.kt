@@ -67,6 +67,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -96,6 +97,7 @@ import com.example.ui.theme.SurfaceWhite
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TextWhite
+import com.example.ui.theme.isAppInDarkTheme
 import com.example.viewmodel.MyOSUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -136,17 +138,18 @@ fun GoalDetailsScreen(
 
   val isCompleted = goal.status == GoalStatus.COMPLETED
   val isPaused = goal.status == GoalStatus.PAUSED
+  val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f || MaterialTheme.colorScheme.background.red < 0.2f
 
   val activeProgressColor = when {
     isCompleted -> HabitEmerald
-    isPaused -> Color(0xFFD97706)
+    isPaused -> if (isDark) Color(0xFFFBBF24) else Color(0xFFD97706)
     else -> BrightBlue
   }
 
   val activeTrackColor = when {
-    isCompleted -> HabitEmeraldTrack
-    isPaused -> Color(0xFFFEF3C7)
-    else -> GoalBlueTrack
+    isCompleted -> if (isDark) HabitEmerald.copy(alpha = 0.2f) else HabitEmeraldTrack
+    isPaused -> if (isDark) Color(0xFFFBBF24).copy(alpha = 0.15f) else Color(0xFFFEF3C7)
+    else -> if (isDark) BrightBlue.copy(alpha = 0.15f) else GoalBlueTrack
   }
 
   Scaffold(
@@ -308,7 +311,7 @@ fun GoalDetailsScreen(
                       modifier = Modifier
                         .size(28.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFFEE2E2))
+                        .background(if (isDark) Color(0xFF3B1A1A) else Color(0xFFFEE2E2))
                         .clickable { showDeleteConfirmation = true },
                       contentAlignment = Alignment.Center
                     ) {
@@ -438,14 +441,26 @@ fun GoalDetailsScreen(
             Spacer(modifier = Modifier.height(14.dp))
 
             // Pause / Shelve Goal Action Button
+            val pauseBg = if (goal.isPaused) {
+              if (isDark) Color(0xFF152642) else Color(0xFFEFF6FF)
+            } else {
+              if (isDark) Color(0xFF382A13) else Color(0xFFFFFBEB)
+            }
+            val pauseBorder = if (goal.isPaused) {
+              BrightBlue.copy(alpha = if (isDark) 0.5f else 0.3f)
+            } else {
+              if (isDark) Color(0xFF78350F) else Color(0xFFFDE68A)
+            }
+            val pauseTextColor = if (goal.isPaused) BrightBlue else (if (isDark) Color(0xFFFBBF24) else Color(0xFFD97706))
+
             Box(
               modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(14.dp))
-                .background(if (goal.isPaused) Color(0xFFEFF6FF) else Color(0xFFFFFBEB))
+                .background(pauseBg)
                 .border(
                   width = 1.dp,
-                  color = if (goal.isPaused) BrightBlue.copy(alpha = 0.3f) else Color(0xFFFDE68A),
+                  color = pauseBorder,
                   shape = RoundedCornerShape(14.dp)
                 )
                 .clickable(onClick = onTogglePauseGoal)
@@ -459,7 +474,7 @@ fun GoalDetailsScreen(
                 Icon(
                   imageVector = if (goal.isPaused) Icons.Outlined.PlayArrow else Icons.Outlined.Inventory2,
                   contentDescription = null,
-                  tint = if (goal.isPaused) BrightBlue else Color(0xFFD97706),
+                  tint = pauseTextColor,
                   modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -469,7 +484,7 @@ fun GoalDetailsScreen(
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp
                   ),
-                  color = if (goal.isPaused) BrightBlue else Color(0xFFD97706)
+                  color = pauseTextColor
                 )
               }
             }
@@ -839,11 +854,12 @@ private fun MetadataCard(
   valueColor: Color = TextPrimary,
   modifier: Modifier = Modifier
 ) {
+  val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f || MaterialTheme.colorScheme.background.red < 0.2f
   Box(
     modifier = modifier
       .clip(RoundedCornerShape(12.dp))
-      .background(Color(0xFFF8FAFC))
-      .border(1.dp, BorderLight.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+      .background(if (isDark) Color(0xFF1E2638) else Color(0xFFF8FAFC))
+      .border(1.dp, if (isDark) Color(0xFF2E394E) else BorderLight.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
       .padding(horizontal = 8.dp, vertical = 8.dp)
   ) {
     Column(
@@ -896,6 +912,8 @@ private fun GoalDetailTaskRow(
     animationSpec = tween(durationMillis = 200),
     label = "taskCheckBorder"
   )
+
+  val isDark = isAppInDarkTheme
 
   Card(
     modifier = modifier
@@ -962,10 +980,10 @@ private fun GoalDetailTaskRow(
 
       // Priority Badge
       val (priorityText, priorityTextColor, priorityBg) = when (task.priority) {
-        Priority.HIGH -> Triple("عالية", PriorityHigh, Color(0xFFFEF2F2))
-        Priority.MEDIUM -> Triple("متوسطة", Color(0xFFD97706), Color(0xFFFFFBEB))
-        Priority.LOW -> Triple("منخفضة", PriorityLow, Color(0xFFF1F5F9))
-        Priority.NONE -> Triple("بدون أولوية", TextSecondary, Color(0xFFF8FAFC))
+        Priority.HIGH -> Triple("عالية", PriorityHigh, if (isDark) Color(0xFF3B1A1A) else Color(0xFFFEF2F2))
+        Priority.MEDIUM -> Triple("متوسطة", if (isDark) Color(0xFFFBBF24) else Color(0xFFD97706), if (isDark) Color(0xFF382A13) else Color(0xFFFFFBEB))
+        Priority.LOW -> Triple("منخفضة", PriorityLow, if (isDark) Color(0xFF1E2838) else Color(0xFFF1F5F9))
+        Priority.NONE -> Triple("بدون أولوية", TextSecondary, if (isDark) Color(0xFF182030) else Color(0xFFF8FAFC))
       }
 
       Box(

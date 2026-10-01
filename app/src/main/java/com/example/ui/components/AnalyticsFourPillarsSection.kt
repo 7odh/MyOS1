@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -52,14 +53,19 @@ import com.example.model.MissedHabitStat
 import com.example.model.PostponedTaskStat
 import com.example.ui.theme.AnalyticsFocusViolet
 import com.example.ui.theme.AnalyticsFocusVioletBg
+import com.example.ui.theme.AnalyticsFocusVioletBgTheme
 import com.example.ui.theme.AnalyticsPostponeSky
 import com.example.ui.theme.AnalyticsPostponeSkyBg
+import com.example.ui.theme.AnalyticsPostponeSkyBgTheme
 import com.example.ui.theme.AnalyticsProgressEmerald
 import com.example.ui.theme.AnalyticsProgressEmeraldBg
+import com.example.ui.theme.AnalyticsProgressEmeraldBgTheme
 import com.example.ui.theme.AnalyticsRestAmber
 import com.example.ui.theme.AnalyticsRestAmberBg
+import com.example.ui.theme.AnalyticsRestAmberBgTheme
 import com.example.ui.theme.AnalyticsShortfallRed
 import com.example.ui.theme.AnalyticsShortfallRedBg
+import com.example.ui.theme.AnalyticsShortfallRedBgTheme
 import com.example.ui.theme.BorderLight
 import com.example.ui.theme.BrightBlue
 import com.example.ui.theme.PriorityHigh
@@ -69,6 +75,7 @@ import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TextWhite
+import com.example.ui.theme.isAppInDarkTheme
 
 @Composable
 fun AnalyticsFourPillarsSection(
@@ -79,6 +86,8 @@ fun AnalyticsFourPillarsSection(
   var isShortfallExpanded by remember { mutableStateOf(true) }
   var isRestExpanded by remember { mutableStateOf(false) }
   var isPostponedExpanded by remember { mutableStateOf(false) }
+
+  val isDark = isAppInDarkTheme
 
   Column(
     modifier = modifier.fillMaxWidth(),
@@ -113,7 +122,7 @@ fun AnalyticsFourPillarsSection(
       subtitle = "نسبة تحقيق المطلوب: ${report.overallCompletionRate}%",
       mainValue = "${report.totalCompletedItems} من ${report.totalPlannedItems}",
       accentColor = AnalyticsProgressEmerald,
-      accentBg = AnalyticsProgressEmeraldBg,
+      accentBg = AnalyticsProgressEmeraldBgTheme,
       icon = Icons.Outlined.CheckCircle,
       isExpanded = isProgressExpanded,
       onToggleExpand = { isProgressExpanded = !isProgressExpanded }
@@ -129,7 +138,8 @@ fun AnalyticsFourPillarsSection(
           total = report.habitsTotal,
           percentage = report.habitsRate,
           barColor = AnalyticsProgressEmerald,
-          unit = "عادة"
+          unit = "عادة",
+          isDark = isDark
         )
         ProgressRow(
           title = "المهام العامة",
@@ -137,7 +147,8 @@ fun AnalyticsFourPillarsSection(
           total = report.tasksTotal,
           percentage = report.tasksRate,
           barColor = BrightBlue,
-          unit = "مهمة"
+          unit = "مهمة",
+          isDark = isDark
         )
         ProgressRow(
           title = "مهام الأهداف الكبرى",
@@ -145,7 +156,8 @@ fun AnalyticsFourPillarsSection(
           total = report.goalTasksTotal,
           percentage = report.goalTasksRate,
           barColor = Color(0xFF6366F1),
-          unit = "خطوة"
+          unit = "خطوة",
+          isDark = isDark
         )
 
         Spacer(modifier = Modifier.height(4.dp))
@@ -157,7 +169,7 @@ fun AnalyticsFourPillarsSection(
           modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(AnalyticsFocusVioletBg)
+            .background(AnalyticsFocusVioletBgTheme)
             .padding(12.dp),
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.SpaceBetween
@@ -197,7 +209,7 @@ fun AnalyticsFourPillarsSection(
       subtitle = "نسبة الفجوة والتقصير: ${report.missedRate}%",
       mainValue = "${report.totalMissedItems} عناصر",
       accentColor = AnalyticsShortfallRed,
-      accentBg = AnalyticsShortfallRedBg,
+      accentBg = AnalyticsShortfallRedBgTheme,
       icon = Icons.Outlined.ErrorOutline,
       isExpanded = isShortfallExpanded,
       onToggleExpand = { isShortfallExpanded = !isShortfallExpanded }
@@ -221,7 +233,7 @@ fun AnalyticsFourPillarsSection(
           )
 
           report.topMissedHabits.forEach { missed ->
-            MissedHabitItemRow(missed = missed)
+            MissedHabitItemRow(missed = missed, isDark = isDark)
           }
 
           Spacer(modifier = Modifier.height(4.dp))
@@ -231,7 +243,7 @@ fun AnalyticsFourPillarsSection(
             modifier = Modifier
               .fillMaxWidth()
               .clip(RoundedCornerShape(12.dp))
-              .background(Color(0xFFFEF2F2))
+              .background(if (isDark) Color(0xFF3B1A1A) else Color(0xFFFEF2F2))
               .padding(12.dp)
           ) {
             Row(verticalAlignment = Alignment.Top) {
@@ -262,7 +274,7 @@ fun AnalyticsFourPillarsSection(
       subtitle = report.restBalanceStatus,
       mainValue = "${report.restDaysCount} أيام راحة",
       accentColor = AnalyticsRestAmber,
-      accentBg = AnalyticsRestAmberBg,
+      accentBg = AnalyticsRestAmberBgTheme,
       icon = Icons.Outlined.Spa,
       isExpanded = isRestExpanded,
       onToggleExpand = { isRestExpanded = !isRestExpanded }
@@ -279,12 +291,14 @@ fun AnalyticsFourPillarsSection(
             title = "أيام وضع الراحة ☕",
             value = "${report.restDaysCount}",
             subtitle = "أيام مستحقة",
+            isDark = isDark,
             modifier = Modifier.weight(1f)
           )
           RestStatCard(
             title = "العادات المركونة ⏸️",
             value = "${report.pausedHabitsCount}",
             subtitle = "مجمدة لحفظ الستريك",
+            isDark = isDark,
             modifier = Modifier.weight(1f)
           )
         }
@@ -294,7 +308,7 @@ fun AnalyticsFourPillarsSection(
           modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(AnalyticsRestAmberBg)
+            .background(AnalyticsRestAmberBgTheme)
             .padding(12.dp)
         ) {
           Row(verticalAlignment = Alignment.Top) {
@@ -304,7 +318,7 @@ fun AnalyticsFourPillarsSection(
               Text(
                 text = "قاعدة حماية الـ Streaks عند الراحة:",
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = Color(0xFFB45309)
+                color = if (isDark) Color(0xFFFBBF24) else Color(0xFFB45309)
               )
               Spacer(modifier = Modifier.height(2.dp))
               Text(
@@ -324,7 +338,7 @@ fun AnalyticsFourPillarsSection(
       subtitle = report.postponementTrendNote,
       mainValue = "${report.postponedTasksCount} مهام",
       accentColor = AnalyticsPostponeSky,
-      accentBg = AnalyticsPostponeSkyBg,
+      accentBg = AnalyticsPostponeSkyBgTheme,
       icon = Icons.Outlined.Schedule,
       isExpanded = isPostponedExpanded,
       onToggleExpand = { isPostponedExpanded = !isPostponedExpanded }
@@ -348,7 +362,7 @@ fun AnalyticsFourPillarsSection(
           )
 
           report.topPostponedTasks.forEach { task ->
-            PostponedTaskRow(task = task)
+            PostponedTaskRow(task = task, isDark = isDark)
           }
 
           Spacer(modifier = Modifier.height(4.dp))
@@ -358,7 +372,7 @@ fun AnalyticsFourPillarsSection(
             modifier = Modifier
               .fillMaxWidth()
               .clip(RoundedCornerShape(12.dp))
-              .background(AnalyticsPostponeSkyBg)
+              .background(AnalyticsPostponeSkyBgTheme)
               .padding(12.dp)
           ) {
             Row(verticalAlignment = Alignment.Top) {
@@ -398,7 +412,10 @@ private fun PillarCard(
   content: @Composable () -> Unit
 ) {
   Card(
-    modifier = Modifier.fillMaxWidth(),
+    modifier = Modifier
+      .fillMaxWidth()
+      .clip(RoundedCornerShape(20.dp))
+      .border(1.dp, BorderLight.copy(alpha = 0.7f), RoundedCornerShape(20.dp)),
     shape = RoundedCornerShape(20.dp),
     colors = CardDefaults.cardColors(containerColor = SurfaceWhite),
     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
@@ -510,7 +527,8 @@ private fun ProgressRow(
   total: Int,
   percentage: Int,
   barColor: Color,
-  unit: String
+  unit: String,
+  isDark: Boolean = false
 ) {
   Column(modifier = Modifier.fillMaxWidth()) {
     Row(
@@ -542,19 +560,19 @@ private fun ProgressRow(
         .height(8.dp)
         .clip(RoundedCornerShape(4.dp)),
       color = barColor,
-      trackColor = Color(0xFFF1F5F9),
+      trackColor = if (isDark) Color(0xFF222B3D) else Color(0xFFF1F5F9),
       strokeCap = StrokeCap.Round
     )
   }
 }
 
 @Composable
-private fun MissedHabitItemRow(missed: MissedHabitStat) {
+private fun MissedHabitItemRow(missed: MissedHabitStat, isDark: Boolean = false) {
   Row(
     modifier = Modifier
       .fillMaxWidth()
       .clip(RoundedCornerShape(10.dp))
-      .background(Color(0xFFFEF2F2).copy(alpha = 0.6f))
+      .background(if (isDark) Color(0xFF3B1A1A) else Color(0xFFFEF2F2).copy(alpha = 0.6f))
       .padding(10.dp),
     verticalAlignment = Alignment.CenterVertically,
     horizontalArrangement = Arrangement.SpaceBetween
@@ -602,12 +620,13 @@ private fun RestStatCard(
   title: String,
   value: String,
   subtitle: String,
+  isDark: Boolean = false,
   modifier: Modifier = Modifier
 ) {
   Box(
     modifier = modifier
       .clip(RoundedCornerShape(12.dp))
-      .background(Color(0xFFFFFBEB))
+      .background(if (isDark) Color(0xFF382A13) else Color(0xFFFFFBEB))
       .padding(12.dp)
   ) {
     Column {
@@ -635,12 +654,12 @@ private fun RestStatCard(
 }
 
 @Composable
-private fun PostponedTaskRow(task: PostponedTaskStat) {
+private fun PostponedTaskRow(task: PostponedTaskStat, isDark: Boolean = false) {
   Row(
     modifier = Modifier
       .fillMaxWidth()
       .clip(RoundedCornerShape(10.dp))
-      .background(Color(0xFFE0F2FE).copy(alpha = 0.5f))
+      .background(if (isDark) Color(0xFF14243B) else Color(0xFFE0F2FE).copy(alpha = 0.5f))
       .padding(10.dp),
     verticalAlignment = Alignment.CenterVertically,
     horizontalArrangement = Arrangement.SpaceBetween

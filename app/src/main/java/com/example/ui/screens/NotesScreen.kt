@@ -69,6 +69,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -94,6 +95,8 @@ import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TextWhite
+import com.example.ui.theme.getNoteCardBackgroundColor
+import com.example.ui.theme.getNoteCardBorderColor
 import com.example.viewmodel.MyOSUiState
 import kotlinx.coroutines.launch
 
@@ -190,10 +193,11 @@ fun NotesScreen(
                     color = TextPrimary
                   )
                   Spacer(modifier = Modifier.width(6.dp))
+                  val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f || MaterialTheme.colorScheme.background.red < 0.2f
                   Box(
                     modifier = Modifier
                       .clip(RoundedCornerShape(8.dp))
-                      .background(Color(0xFFFEF3C7))
+                      .background(if (isDark) Color(0xFF382A13) else Color(0xFFFEF3C7))
                       .padding(horizontal = 6.dp, vertical = 2.dp)
                   ) {
                     Text(
@@ -202,7 +206,7 @@ fun NotesScreen(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
                       ),
-                      color = Color(0xFFB45309)
+                      color = if (isDark) Color(0xFFFBBF24) else Color(0xFFB45309)
                     )
                   }
                 }
@@ -254,10 +258,12 @@ fun NotesScreen(
                 .height(48.dp),
               shape = RoundedCornerShape(24.dp),
               colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color(0xFFF8FAFC),
-                unfocusedContainerColor = Color(0xFFF8FAFC),
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                 focusedBorderColor = BrightBlue,
-                unfocusedBorderColor = BorderLight
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
               ),
               singleLine = true
             )
@@ -288,8 +294,8 @@ fun NotesScreen(
                   colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = BrightBlue,
                     selectedLabelColor = TextWhite,
-                    containerColor = Color(0xFFF1F5F9),
-                    labelColor = TextPrimary
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    labelColor = MaterialTheme.colorScheme.onSurface
                   ),
                   shape = RoundedCornerShape(16.dp),
                   border = null,
@@ -386,7 +392,9 @@ fun NotesScreen(
                   focusedContainerColor = Color.Transparent,
                   unfocusedContainerColor = Color.Transparent,
                   focusedBorderColor = Color.Transparent,
-                  unfocusedBorderColor = Color.Transparent
+                  unfocusedBorderColor = Color.Transparent,
+                  focusedTextColor = TextPrimary,
+                  unfocusedTextColor = TextPrimary
                 ),
                 singleLine = true
               )
@@ -494,14 +502,18 @@ private fun IdeaNoteCard(
   onConvertToTask: () -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f || MaterialTheme.colorScheme.background.red < 0.2f
+  val cardBg = getNoteCardBackgroundColor(note.colorLong, isDark)
+  val cardBorder = getNoteCardBorderColor(note.colorLong, isDark)
+
   Card(
     modifier = modifier
       .fillMaxWidth()
       .padding(horizontal = 14.dp)
       .clip(RoundedCornerShape(18.dp))
-      .border(1.dp, BorderLight.copy(alpha = 0.7f), RoundedCornerShape(18.dp)),
+      .border(1.dp, cardBorder, RoundedCornerShape(18.dp)),
     shape = RoundedCornerShape(18.dp),
-    colors = CardDefaults.cardColors(containerColor = Color(note.colorLong)),
+    colors = CardDefaults.cardColors(containerColor = cardBg),
     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
   ) {
     Column(
@@ -519,7 +531,7 @@ private fun IdeaNoteCard(
         Box(
           modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(SurfaceWhite.copy(alpha = 0.75f))
+            .background(if (isDark) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f) else SurfaceWhite.copy(alpha = 0.85f))
             .padding(horizontal = 8.dp, vertical = 3.dp)
         ) {
           Text(
@@ -528,7 +540,7 @@ private fun IdeaNoteCard(
               fontSize = 10.sp,
               fontWeight = FontWeight.Bold
             ),
-            color = TextPrimary
+            color = MaterialTheme.colorScheme.onSurface
           )
         }
 
@@ -583,7 +595,7 @@ private fun IdeaNoteCard(
           fontWeight = FontWeight.Bold,
           fontSize = 15.sp
         ),
-        color = TextPrimary,
+        color = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.clickable(onClick = onEdit)
       )
 
@@ -596,7 +608,7 @@ private fun IdeaNoteCard(
             fontSize = 12.sp,
             lineHeight = 18.sp
           ),
-          color = TextSecondary,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
           modifier = Modifier.clickable(onClick = onEdit)
         )
       }
@@ -621,7 +633,7 @@ private fun IdeaNoteCard(
           Box(
             modifier = Modifier
               .clip(RoundedCornerShape(8.dp))
-              .background(GoalBlueBg)
+              .background(if (isDark) Color(0xFF192A4A) else Color(0xFFEFF6FF))
               .clickable(onClick = onConvertToGoal)
               .padding(horizontal = 6.dp, vertical = 3.dp)
           ) {
@@ -631,7 +643,7 @@ private fun IdeaNoteCard(
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Bold
               ),
-              color = GoalBlue
+              color = BrightBlue
             )
           }
 
@@ -639,7 +651,7 @@ private fun IdeaNoteCard(
           Box(
             modifier = Modifier
               .clip(RoundedCornerShape(8.dp))
-              .background(HabitEmeraldBg)
+              .background(if (isDark) Color(0xFF122E25) else Color(0xFFECFDF5))
               .clickable(onClick = onConvertToHabit)
               .padding(horizontal = 6.dp, vertical = 3.dp)
           ) {
@@ -657,7 +669,7 @@ private fun IdeaNoteCard(
           Box(
             modifier = Modifier
               .clip(RoundedCornerShape(8.dp))
-              .background(TaskVioletBg)
+              .background(if (isDark) Color(0xFF271C3F) else Color(0xFFF5F3FF))
               .clickable(onClick = onConvertToTask)
               .padding(horizontal = 6.dp, vertical = 3.dp)
           ) {
