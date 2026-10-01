@@ -153,7 +153,10 @@ fun TasksScreen(
           onMenuClick = {
             scope.launch { drawerState.open() }
           },
-          onRestModeToggle = onToggleRestMode
+          onRestModeToggle = onToggleRestMode,
+          onSearchClick = {
+            onScreenSelected(ScreenDestination.SEARCH)
+          }
         )
       },
       bottomBar = {

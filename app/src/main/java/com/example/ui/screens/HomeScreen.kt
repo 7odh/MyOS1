@@ -155,7 +155,10 @@ fun HomeScreen(
           onMenuClick = {
             scope.launch { drawerState.open() }
           },
-          onRestModeToggle = onToggleRestMode
+          onRestModeToggle = onToggleRestMode,
+          onSearchClick = {
+            onScreenSelected(ScreenDestination.SEARCH)
+          }
         )
       },
       bottomBar = {
@@ -224,7 +227,10 @@ fun HomeScreen(
 
           // 2. Daily Analytics Summary Section
           DailySummarySection(
-            analytics = uiState.dailyAnalytics
+            analytics = uiState.dailyAnalytics,
+            onNavigateToAnalytics = {
+              onScreenSelected(ScreenDestination.ANALYTICS)
+            }
           )
 
           Spacer(modifier = Modifier.height(6.dp))

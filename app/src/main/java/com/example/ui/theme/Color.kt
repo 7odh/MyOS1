@@ -42,6 +42,18 @@ val SurfaceCard = Color(0xFFFFFFFF)
 val BorderLight = Color(0xFFE2E8F0)
 val BorderVeryLight = Color(0xFFF1F5F9)
 
+// Analytics Semantic Colors
+val AnalyticsProgressEmerald = Color(0xFF10B981)
+val AnalyticsProgressEmeraldBg = Color(0xFFECFDF5)
+val AnalyticsShortfallRed = Color(0xFFEF4444)
+val AnalyticsShortfallRedBg = Color(0xFFFEF2F2)
+val AnalyticsRestAmber = Color(0xFFF59E0B)
+val AnalyticsRestAmberBg = Color(0xFFFFFBEB)
+val AnalyticsPostponeSky = Color(0xFF0284C7)
+val AnalyticsPostponeSkyBg = Color(0xFFE0F2FE)
+val AnalyticsFocusViolet = Color(0xFF8B5CF6)
+val AnalyticsFocusVioletBg = Color(0xFFF5F3FF)
+
 val TextPrimary = Color(0xFF0F172A)
 val TextSecondary = Color(0xFF64748B)
 val TextMuted = Color(0xFF94A3B8)

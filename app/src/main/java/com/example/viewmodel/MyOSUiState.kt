@@ -1,6 +1,8 @@
 package com.example.viewmodel
 
 import com.example.model.AmbientSoundType
+import com.example.model.AnalyticsReport
+import com.example.model.AnalyticsTimePeriod
 import com.example.model.CalendarViewMode
 import com.example.model.DailyAnalytics
 import com.example.model.DaySummaryHistory
@@ -11,9 +13,13 @@ import com.example.model.Habit
 import com.example.model.Note
 import com.example.model.QuickAddType
 import com.example.model.ScreenDestination
+import com.example.model.SearchCategory
+import com.example.model.SearchResultItem
 import com.example.model.Task
 import com.example.model.User
+import com.example.model.buildAnalyticsReport
 import com.example.model.getTodayDateString
+import com.example.model.performGlobalSearch
 
 enum class GoalFilter(val titleArabic: String) {
   ALL("الكل"),
@@ -88,10 +94,33 @@ data class MyOSUiState(
   val isFlipClockFullScreen: Boolean = false,
   val focusSessionsCompletedToday: Int = 2,
   val focusTotalMinutesToday: Int = 50,
+  val selectedAnalyticsPeriod: AnalyticsTimePeriod = AnalyticsTimePeriod.WEEK,
+  val analyticsReport: AnalyticsReport = buildAnalyticsReport(
+    period = AnalyticsTimePeriod.WEEK,
+    habits = emptyList(),
+    generalTasks = emptyList(),
+    goals = emptyList(),
+    dailyHistory = emptyMap()
+  ),
+  val dailyHistory: Map<String, DaySummaryHistory> = emptyMap(),
+  val globalSearchQuery: String = "",
+  val activeSearchCategory: SearchCategory = SearchCategory.ALL,
+  val recentSearches: List<String> = listOf("القرآن", "الجيم", "لوحة التحكم", "كود", "إنجليزي"),
   val notificationMessage: String? = null
 ) {
   val selectedGoal: Goal?
     get() = goals.find { it.id == selectedGoalId }
+
+  val searchResults: List<SearchResultItem>
+    get() = performGlobalSearch(
+      query = globalSearchQuery,
+      category = activeSearchCategory,
+      habits = habits,
+      generalTasks = generalTasks,
+      goals = goals,
+      notes = notes,
+      dailyHistory = dailyHistory
+    )
 
   val filteredNotes: List<Note>
     get() {

@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.model.ScreenDestination
+import com.example.ui.screens.AnalyticsScreen
 import com.example.ui.screens.CalendarScreen
 import com.example.ui.screens.FocusScreen
 import com.example.ui.screens.GoalDetailsScreen
@@ -23,6 +24,7 @@ import com.example.ui.screens.HabitsScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.NotesScreen
 import com.example.ui.screens.PlaceholderScreen
+import com.example.ui.screens.SearchScreen
 import com.example.ui.screens.TasksScreen
 import com.example.ui.theme.BackgroundLight
 import com.example.ui.theme.MyApplicationTheme
@@ -220,6 +222,37 @@ fun MyOSApp(viewModel: MyOSViewModel) {
           onToggleCustomDurationDialog = viewModel::toggleCustomDurationDialog,
           onToggleFlipClockFullScreen = viewModel::toggleFlipClockFullScreen,
           onDismissNotification = viewModel::dismissNotification
+        )
+      }
+      ScreenDestination.ANALYTICS -> {
+        AnalyticsScreen(
+          uiState = uiState,
+          onScreenSelected = viewModel::onScreenSelected,
+          onToggleRestMode = viewModel::onToggleRestMode,
+          onSelectPeriod = viewModel::setAnalyticsPeriod,
+          onDismissNotification = viewModel::dismissNotification
+        )
+      }
+      ScreenDestination.SEARCH -> {
+        SearchScreen(
+          uiState = uiState,
+          onQueryChanged = viewModel::onSearchQueryChanged,
+          onCategorySelected = viewModel::onSearchCategorySelected,
+          onExecuteSearch = viewModel::onExecuteSearch,
+          onClearQuery = viewModel::onClearSearchQuery,
+          onClearRecentSearches = viewModel::onClearRecentSearches,
+          onNavigateBack = { viewModel.onScreenSelected(ScreenDestination.HOME) },
+          onSelectGoal = viewModel::onSelectGoal,
+          onSelectCalendarDate = { dateKey ->
+            viewModel.onSelectCalendarDate(dateKey)
+            viewModel.onScreenSelected(ScreenDestination.CALENDAR)
+          },
+          onToggleGeneralTask = viewModel::toggleGeneralTask,
+          onToggleGoalTask = viewModel::toggleGoalTask,
+          onPostponeTask = viewModel::postponeGeneralTask,
+          onPostponeGoalTask = viewModel::postponeGoalTask,
+          onIncrementHabit = viewModel::incrementHabit,
+          onToggleHabitBoolean = viewModel::toggleHabitBoolean
         )
       }
       else -> {

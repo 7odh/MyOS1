@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Menu
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Spa
 import androidx.compose.material.icons.outlined.TrackChanges
 import androidx.compose.material3.Card
@@ -241,28 +242,44 @@ fun CalendarScreen(
                 }
               }
 
-              // "اليوم" Quick Shortcut Button
-              TextButton(
-                onClick = {
-                  val todayCal = Calendar.getInstance()
-                  displayYear = todayCal.get(Calendar.YEAR)
-                  displayMonth = todayCal.get(Calendar.MONTH)
-                  onSelectDate(getTodayDateString())
-                },
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier
-                  .clip(RoundedCornerShape(12.dp))
-                  .background(GoalBlueBg)
-              ) {
-                Text(
-                  text = "اليوم ⚡",
-                  style = MaterialTheme.typography.labelMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
-                  ),
-                  color = BrightBlue
-                )
+              // Search and "اليوم" Quick Shortcut Buttons
+              Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                  onClick = { onScreenSelected(ScreenDestination.SEARCH) },
+                  modifier = Modifier.size(36.dp)
+                ) {
+                  Icon(
+                    imageVector = Icons.Outlined.Search,
+                    contentDescription = "البحث الشامل",
+                    tint = BrightBlue,
+                    modifier = Modifier.size(20.dp)
+                  )
+                }
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                TextButton(
+                  onClick = {
+                    val todayCal = Calendar.getInstance()
+                    displayYear = todayCal.get(Calendar.YEAR)
+                    displayMonth = todayCal.get(Calendar.MONTH)
+                    onSelectDate(getTodayDateString())
+                  },
+                  contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                  shape = RoundedCornerShape(12.dp),
+                  modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(GoalBlueBg)
+                ) {
+                  Text(
+                    text = "اليوم ⚡",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                      fontWeight = FontWeight.Bold,
+                      fontSize = 12.sp
+                    ),
+                    color = BrightBlue
+                  )
+                }
               }
             }
 

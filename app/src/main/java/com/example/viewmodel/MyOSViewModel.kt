@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.MyOSRepository
 import com.example.model.AmbientSoundType
+import com.example.model.AnalyticsTimePeriod
 import com.example.model.CalendarViewMode
 import com.example.model.DailyAnalytics
 import com.example.model.DayOfWeekArabic
@@ -18,8 +19,10 @@ import com.example.model.Note
 import com.example.model.Priority
 import com.example.model.QuickAddType
 import com.example.model.ScreenDestination
+import com.example.model.SearchCategory
 import com.example.model.Task
 import com.example.model.TaskSchedule
+import com.example.model.buildAnalyticsReport
 import com.example.util.AmbientSoundManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -71,6 +74,18 @@ class MyOSViewModel(
         )
         val selectedDate = _uiState.value.selectedCalendarDate
         val daySummary = repository.getDaySummary(selectedDate)
+
+        val report = buildAnalyticsReport(
+          period = _uiState.value.selectedAnalyticsPeriod,
+          habits = habits,
+          generalTasks = tasks,
+          goals = goals,
+          dailyHistory = repository.dailyHistory.value,
+          focusMinutesToday = _uiState.value.focusTotalMinutesToday,
+          focusSessionsToday = _uiState.value.focusSessionsCompletedToday,
+          isRestModeActive = user.isRestModeActive
+        )
+
         _uiState.update { current ->
           val updatedAttachment = if (current.focusAttachment.type == FocusAttachType.HABIT) {
             habits.find { it.id == current.focusAttachment.id }?.let { h ->
@@ -89,11 +104,54 @@ class MyOSViewModel(
             notes = notes,
             dailyAnalytics = analytics,
             selectedDaySummary = daySummary,
-            focusAttachment = updatedAttachment
+            focusAttachment = updatedAttachment,
+            analyticsReport = report,
+            dailyHistory = repository.dailyHistory.value
           )
         }
       }.collect {}
     }
+  }
+
+  fun onSearchQueryChanged(query: String) {
+    _uiState.update { it.copy(globalSearchQuery = query) }
+  }
+
+  fun onSearchCategorySelected(category: SearchCategory) {
+    _uiState.update { it.copy(activeSearchCategory = category) }
+  }
+
+  fun onClearSearchQuery() {
+    _uiState.update { it.copy(globalSearchQuery = "") }
+  }
+
+  fun onExecuteSearch(query: String) {
+    val trimmed = query.trim()
+    if (trimmed.isNotEmpty()) {
+      _uiState.update { current ->
+        val updatedRecent = (listOf(trimmed) + current.recentSearches.filterNot { it.equals(trimmed, ignoreCase = true) }).take(8)
+        current.copy(globalSearchQuery = trimmed, recentSearches = updatedRecent)
+      }
+    }
+  }
+
+  fun onClearRecentSearches() {
+    _uiState.update { it.copy(recentSearches = emptyList()) }
+  }
+
+  fun setAnalyticsPeriod(period: AnalyticsTimePeriod) {
+    val current = _uiState.value
+    val report = buildAnalyticsReport(
+      period = period,
+      habits = current.habits,
+      generalTasks = current.generalTasks,
+      goals = current.goals,
+      dailyHistory = repository.dailyHistory.value,
+      focusMinutesToday = current.focusTotalMinutesToday,
+      focusSessionsToday = current.focusSessionsCompletedToday,
+      isRestModeActive = current.user.isRestModeActive
+    )
+    _uiState.update { it.copy(selectedAnalyticsPeriod = period, analyticsReport = report) }
   }
 
   fun onScreenSelected(destination: ScreenDestination) {

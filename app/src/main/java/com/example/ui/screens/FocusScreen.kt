@@ -194,7 +194,8 @@ fun FocusScreen(
         MyOSHeader(
           isRestModeActive = uiState.user.isRestModeActive,
           onMenuClick = { scope.launch { drawerState.open() } },
-          onRestModeToggle = onToggleRestMode
+          onRestModeToggle = onToggleRestMode,
+          onSearchClick = { onScreenSelected(ScreenDestination.SEARCH) }
         )
       },
       bottomBar = {

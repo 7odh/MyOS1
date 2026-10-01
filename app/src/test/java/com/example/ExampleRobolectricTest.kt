@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.example.data.MyOSRepository
 import com.example.model.AmbientSoundProvider
 import com.example.model.AmbientSoundType
+import com.example.model.AnalyticsTimePeriod
 import com.example.model.DayOfWeekArabic
 import com.example.model.FocusAttachment
 import com.example.model.FocusAttachType
@@ -13,7 +14,12 @@ import com.example.model.GoalStatus
 import com.example.model.HabitFrequency
 import com.example.model.HabitType
 import com.example.model.Priority
+import com.example.model.ScreenDestination
+import com.example.model.SearchCategory
+import com.example.model.SearchResultItem
 import com.example.model.TaskSchedule
+import com.example.model.buildAnalyticsReport
+import com.example.model.performGlobalSearch
 import com.example.viewmodel.MyOSViewModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -581,5 +587,158 @@ class ExampleRobolectricTest {
     assertTrue(sounds.any { it.type == AmbientSoundType.FIRE })
     assertTrue(sounds.any { it.type == AmbientSoundType.SNOW })
     assertTrue(sounds.any { it.type == AmbientSoundType.FOREST })
+  }
+
+  @Test
+  fun `test analytics report builds for all four periods`() {
+    val repository = MyOSRepository()
+    val habits = repository.habits.value
+    val tasks = repository.generalTasks.value
+    val goals = repository.goals.value
+    val history = repository.dailyHistory.value
+
+    val todayReport = buildAnalyticsReport(AnalyticsTimePeriod.TODAY, habits, tasks, goals, history)
+    assertEquals(AnalyticsTimePeriod.TODAY, todayReport.period)
+    assertTrue(todayReport.productivityScore in 10..100)
+    assertTrue(todayReport.chartBars.isNotEmpty())
+    assertTrue(todayReport.insights.isNotEmpty())
+
+    val weekReport = buildAnalyticsReport(AnalyticsTimePeriod.WEEK, habits, tasks, goals, history)
+    assertEquals(AnalyticsTimePeriod.WEEK, weekReport.period)
+    assertEquals(7, weekReport.chartBars.size)
+    assertTrue(weekReport.overallCompletionRate > 0)
+
+    val monthReport = buildAnalyticsReport(AnalyticsTimePeriod.MONTH, habits, tasks, goals, history)
+    assertEquals(AnalyticsTimePeriod.MONTH, monthReport.period)
+    assertEquals(4, monthReport.chartBars.size)
+
+    val yearReport = buildAnalyticsReport(AnalyticsTimePeriod.YEAR, habits, tasks, goals, history)
+    assertEquals(AnalyticsTimePeriod.YEAR, yearReport.period)
+    assertEquals(9, yearReport.chartBars.size)
+  }
+
+  @Test
+  fun `test analytics four pillars progress shortfall rest postponed calculations`() {
+    val repository = MyOSRepository()
+    val habits = repository.habits.value
+    val tasks = repository.generalTasks.value
+    val goals = repository.goals.value
+    val history = repository.dailyHistory.value
+
+    val weekReport = buildAnalyticsReport(AnalyticsTimePeriod.WEEK, habits, tasks, goals, history)
+
+    // 1. Progress (التقدم)
+    assertTrue(weekReport.totalCompletedItems > 0)
+    assertTrue(weekReport.overallCompletionRate in 50..100)
+    assertTrue(weekReport.habitsCompleted > 0)
+    assertTrue(weekReport.focusTotalMinutes > 0)
+
+    // 2. Shortfall (التقصير)
+    assertTrue(weekReport.totalMissedItems >= 0)
+    assertTrue(weekReport.topMissedHabits.isNotEmpty())
+    assertTrue(weekReport.topMissedHabits.any { it.habitId == "h2" }) // Gym missed days
+
+    // 3. Rest (الراحة)
+    assertTrue(weekReport.restDaysCount > 0)
+    assertFalse(weekReport.restBalanceStatus.isEmpty())
+
+    // 4. Postponed (التأجيل)
+    assertTrue(weekReport.postponedTasksCount > 0)
+    assertTrue(weekReport.topPostponedTasks.isNotEmpty())
+  }
+
+  @Test
+  fun `test viewmodel switches analytics period and updates report`() {
+    val repository = MyOSRepository()
+    val viewModel = MyOSViewModel(repository)
+
+    // Default period is WEEK
+    assertEquals(AnalyticsTimePeriod.WEEK, viewModel.uiState.value.selectedAnalyticsPeriod)
+
+    // Switch to TODAY
+    viewModel.setAnalyticsPeriod(AnalyticsTimePeriod.TODAY)
+    assertEquals(AnalyticsTimePeriod.TODAY, viewModel.uiState.value.selectedAnalyticsPeriod)
+    assertEquals(AnalyticsTimePeriod.TODAY, viewModel.uiState.value.analyticsReport.period)
+
+    // Switch to MONTH
+    viewModel.setAnalyticsPeriod(AnalyticsTimePeriod.MONTH)
+    assertEquals(AnalyticsTimePeriod.MONTH, viewModel.uiState.value.selectedAnalyticsPeriod)
+    assertEquals(AnalyticsTimePeriod.MONTH, viewModel.uiState.value.analyticsReport.period)
+
+    // Switch to YEAR
+    viewModel.setAnalyticsPeriod(AnalyticsTimePeriod.YEAR)
+    assertEquals(AnalyticsTimePeriod.YEAR, viewModel.uiState.value.selectedAnalyticsPeriod)
+    assertEquals(AnalyticsTimePeriod.YEAR, viewModel.uiState.value.analyticsReport.period)
+
+    // Navigation to ANALYTICS destination
+    viewModel.onScreenSelected(ScreenDestination.ANALYTICS)
+    assertEquals(ScreenDestination.ANALYTICS, viewModel.uiState.value.currentScreen)
+  }
+
+  @Test
+  fun `test global search recognizes tasks habits goals notes and calendar with arabic normalization`() {
+    val repository = MyOSRepository()
+    val habits = repository.habits.value
+    val tasks = repository.generalTasks.value
+    val goals = repository.goals.value
+    val notes = repository.notes.value
+    val history = repository.dailyHistory.value
+
+    // Search with Arabic normalization (alef without hamza: "قران" matches "الورد القرآني")
+    val quranResults = performGlobalSearch("قران", SearchCategory.ALL, habits, tasks, goals, notes, history)
+    assertTrue(quranResults.isNotEmpty())
+    assertTrue(quranResults.any { it is SearchResultItem.HabitItem && it.habit.id == "h3" })
+
+    // Search for "جيم" matches gym habit
+    val gymResults = performGlobalSearch("جيم", SearchCategory.ALL, habits, tasks, goals, notes, history)
+    assertTrue(gymResults.any { it is SearchResultItem.HabitItem && it.habit.id == "h2" })
+
+    // Search for goal: "انجليزي" matches "إتقان اللغة الإنجليزية"
+    val englishResults = performGlobalSearch("انجليزي", SearchCategory.ALL, habits, tasks, goals, notes, history)
+    assertTrue(englishResults.any { it is SearchResultItem.GoalItem && it.goal.id == "g1" })
+
+    // Search for task: "تصميم" matches "تصميم واجهة لوحة التحكم"
+    val designResults = performGlobalSearch("تصميم", SearchCategory.ALL, habits, tasks, goals, notes, history)
+    assertTrue(designResults.any { it is SearchResultItem.TaskItem })
+
+    // Search category filtering: SearchCategory.HABITS returns only habits
+    val habitsOnlyResults = performGlobalSearch("صلاة", SearchCategory.HABITS, habits, tasks, goals, notes, history)
+    assertTrue(habitsOnlyResults.all { it is SearchResultItem.HabitItem })
+  }
+
+  @Test
+  fun `test viewmodel handles global search query and recent history`() {
+    val repository = MyOSRepository()
+    val viewModel = MyOSViewModel(repository)
+
+    // Initially query is empty and has default recent searches
+    assertEquals("", viewModel.uiState.value.globalSearchQuery)
+    assertTrue(viewModel.uiState.value.recentSearches.isNotEmpty())
+
+    // Update search query
+    viewModel.onSearchQueryChanged("كود")
+    assertEquals("كود", viewModel.uiState.value.globalSearchQuery)
+    assertTrue(viewModel.uiState.value.searchResults.isNotEmpty())
+
+    // Filter by GOALS
+    viewModel.onSearchCategorySelected(SearchCategory.GOALS)
+    assertEquals(SearchCategory.GOALS, viewModel.uiState.value.activeSearchCategory)
+    assertTrue(viewModel.uiState.value.searchResults.all { it is SearchResultItem.GoalItem })
+
+    // Execute search saves query to recent searches
+    viewModel.onExecuteSearch("تطبيق")
+    assertTrue(viewModel.uiState.value.recentSearches.contains("تطبيق"))
+
+    // Clear search
+    viewModel.onClearSearchQuery()
+    assertEquals("", viewModel.uiState.value.globalSearchQuery)
+
+    // Clear recent searches
+    viewModel.onClearRecentSearches()
+    assertTrue(viewModel.uiState.value.recentSearches.isEmpty())
+
+    // Navigation to SEARCH screen
+    viewModel.onScreenSelected(ScreenDestination.SEARCH)
+    assertEquals(ScreenDestination.SEARCH, viewModel.uiState.value.currentScreen)
   }
 }

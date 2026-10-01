@@ -114,7 +114,7 @@ fun NavigationDrawerContent(
         .weight(1f)
         .verticalScroll(rememberScrollState())
     ) {
-      // Main destinations (Cleaned: removed inactive Projects and Knowledge until fully designed)
+      // Main destinations (Cleaned: removed inactive Projects and Knowledge; Search is now in top bar)
       val mainItems = listOf(
         ScreenDestination.HOME,
         ScreenDestination.GOALS,
@@ -124,8 +124,7 @@ fun NavigationDrawerContent(
         ScreenDestination.LISTS,
         ScreenDestination.NOTES,
         ScreenDestination.FOCUS,
-        ScreenDestination.ANALYTICS,
-        ScreenDestination.SEARCH
+        ScreenDestination.ANALYTICS
       )
 
       mainItems.forEach { destination ->

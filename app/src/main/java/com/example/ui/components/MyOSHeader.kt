@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FreeBreakfast
 import androidx.compose.material.icons.outlined.Menu
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -28,11 +29,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.theme.BackgroundLight
+import com.example.ui.theme.BrightBlue
+import com.example.ui.theme.GoalBlueBg
 import com.example.ui.theme.RestLavenderActive
 import com.example.ui.theme.RestLavenderBg
 import com.example.ui.theme.RestLavenderText
@@ -45,6 +49,7 @@ fun MyOSHeader(
   isRestModeActive: Boolean,
   onMenuClick: () -> Unit,
   onRestModeToggle: () -> Unit,
+  onSearchClick: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val restBgColor by animateColorAsState(
@@ -118,37 +123,59 @@ fun MyOSHeader(
         }
       }
 
-      // "راحة" (Rest Day) Button
-      Box(
-        modifier = Modifier
-          .clip(RoundedCornerShape(20.dp))
-          .background(restBgColor)
-          .clickable(
-            role = Role.Button,
-            onClick = onRestModeToggle
-          )
-          .padding(horizontal = 14.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center
+      // Action buttons: Search magnifying glass and "راحة" (Rest Day) Button
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
       ) {
-        Row(
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.Center
+        // Global Search Lens Button
+        IconButton(
+          onClick = onSearchClick,
+          modifier = Modifier
+            .size(38.dp)
+            .clip(CircleShape)
+            .background(Color(0xFFEFF6FF))
         ) {
           Icon(
-            imageVector = Icons.Outlined.FreeBreakfast,
-            contentDescription = "وضع الراحة",
-            tint = restTextColor,
-            modifier = Modifier.size(18.dp)
+            imageVector = Icons.Outlined.Search,
+            contentDescription = "البحث الشامل",
+            tint = BrightBlue,
+            modifier = Modifier.size(20.dp)
           )
-          Spacer(modifier = Modifier.width(6.dp))
-          Text(
-            text = "راحة",
-            style = MaterialTheme.typography.labelMedium.copy(
-              fontWeight = FontWeight.Bold,
-              fontSize = 13.sp
-            ),
-            color = restTextColor
-          )
+        }
+
+        // "راحة" (Rest Day) Button
+        Box(
+          modifier = Modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(restBgColor)
+            .clickable(
+              role = Role.Button,
+              onClick = onRestModeToggle
+            )
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+          contentAlignment = Alignment.Center
+        ) {
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+          ) {
+            Icon(
+              imageVector = Icons.Outlined.FreeBreakfast,
+              contentDescription = "وضع الراحة",
+              tint = restTextColor,
+              modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+              text = "راحة",
+              style = MaterialTheme.typography.labelMedium.copy(
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp
+              ),
+              color = restTextColor
+            )
+          }
         }
       }
     }
