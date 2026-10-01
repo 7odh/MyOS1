@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
@@ -38,7 +39,6 @@ import com.example.ui.components.MyOSBottomNavigationBar
 import com.example.ui.components.MyOSHeader
 import com.example.ui.components.NavigationDrawerContent
 import com.example.ui.theme.BackgroundLight
-import com.example.ui.theme.SurfaceWhite
 import com.example.viewmodel.MyOSUiState
 import kotlinx.coroutines.launch
 
@@ -51,6 +51,8 @@ fun AnalyticsScreen(
   onDismissNotification: () -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val lang = uiState.appSettings.language
+
   BackHandler {
     onScreenSelected(ScreenDestination.HOME)
   }
@@ -69,11 +71,12 @@ fun AnalyticsScreen(
   ModalNavigationDrawer(
     drawerState = drawerState,
     drawerContent = {
-      ModalDrawerSheet(drawerContainerColor = SurfaceWhite) {
+      ModalDrawerSheet(drawerContainerColor = MaterialTheme.colorScheme.surface) {
         NavigationDrawerContent(
           currentScreen = uiState.currentScreen,
           onScreenSelected = onScreenSelected,
-          onCloseDrawer = { scope.launch { drawerState.close() } }
+          onCloseDrawer = { scope.launch { drawerState.close() } },
+          language = lang
         )
       }
     }
@@ -84,13 +87,15 @@ fun AnalyticsScreen(
           isRestModeActive = uiState.user.isRestModeActive,
           onMenuClick = { scope.launch { drawerState.open() } },
           onRestModeToggle = onToggleRestMode,
-          onSearchClick = { onScreenSelected(ScreenDestination.SEARCH) }
+          onSearchClick = { onScreenSelected(ScreenDestination.SEARCH) },
+          language = lang
         )
       },
       bottomBar = {
         MyOSBottomNavigationBar(
           currentScreen = uiState.currentScreen,
-          onTabSelected = onScreenSelected
+          onTabSelected = onScreenSelected,
+          language = lang
         )
       },
       snackbarHost = { SnackbarHost(snackbarHostState) },

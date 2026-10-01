@@ -2,14 +2,15 @@ package com.example.model
 
 enum class SearchCategory(
   val titleArabic: String,
+  val titleEnglish: String,
   val iconEmoji: String
 ) {
-  ALL("الكل", "🌐"),
-  TASKS("المهام", "⚡"),
-  HABITS("العادات", "🌱"),
-  GOALS("الأهداف", "🎯"),
-  NOTES("الملاحظات", "💡"),
-  CALENDAR("التقويم", "📅")
+  ALL("الكل", "All", "🌐"),
+  TASKS("المهام", "Tasks", "⚡"),
+  HABITS("العادات", "Habits", "🌱"),
+  GOALS("الأهداف", "Goals", "🎯"),
+  NOTES("الملاحظات", "Notes", "💡"),
+  CALENDAR("التقويم", "Calendar", "📅")
 }
 
 sealed class SearchResultItem {

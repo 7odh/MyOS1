@@ -34,17 +34,15 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.theme.BackgroundLight
+import com.example.model.AppLanguage
+import com.example.model.AppStrings
 import com.example.ui.theme.BrightBlue
-import com.example.ui.theme.GoalBlueBg
 import com.example.ui.theme.RestLavenderActive
 import com.example.ui.theme.RestLavenderBg
+import com.example.ui.theme.RestLavenderBgDark
 import com.example.ui.theme.RestLavenderText
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.RestLavenderTextDark
 import com.example.ui.theme.TextWhite
-
-import androidx.compose.material.icons.outlined.Settings
 
 @Composable
 fun MyOSHeader(
@@ -52,17 +50,31 @@ fun MyOSHeader(
   onMenuClick: () -> Unit,
   onRestModeToggle: () -> Unit,
   onSearchClick: () -> Unit = {},
-  onSettingsClick: (() -> Unit)? = null,
+  language: AppLanguage = AppLanguage.ARABIC,
   modifier: Modifier = Modifier
 ) {
+  val isDark = MaterialTheme.colorScheme.background.red < 0.2f
+
+  val targetRestBg = if (isRestModeActive) {
+    RestLavenderActive
+  } else {
+    if (isDark) RestLavenderBgDark else RestLavenderBg
+  }
+
+  val targetRestText = if (isRestModeActive) {
+    TextWhite
+  } else {
+    if (isDark) RestLavenderTextDark else RestLavenderText
+  }
+
   val restBgColor by animateColorAsState(
-    targetValue = if (isRestModeActive) RestLavenderActive else RestLavenderBg,
+    targetValue = targetRestBg,
     animationSpec = tween(durationMillis = 300),
     label = "restBgColor"
   )
 
   val restTextColor by animateColorAsState(
-    targetValue = if (isRestModeActive) TextWhite else RestLavenderText,
+    targetValue = targetRestText,
     animationSpec = tween(durationMillis = 300),
     label = "restTextColor"
   )
@@ -90,7 +102,7 @@ fun MyOSHeader(
       ) {
         Icon(
           imageVector = Icons.Outlined.Menu,
-          contentDescription = "القائمة الجانبية",
+          contentDescription = if (language == AppLanguage.ARABIC) "القائمة الجانبية" else "Side Menu",
           tint = MaterialTheme.colorScheme.onSurface,
           modifier = Modifier.size(26.dp)
         )
@@ -116,7 +128,7 @@ fun MyOSHeader(
             color = MaterialTheme.colorScheme.onBackground
           )
           Text(
-            text = "عقلك الثاني",
+            text = AppStrings.appSubtitle(language),
             style = MaterialTheme.typography.labelSmall.copy(
               fontSize = 11.sp,
               fontWeight = FontWeight.Medium
@@ -126,45 +138,28 @@ fun MyOSHeader(
         }
       }
 
-      // Action buttons: Settings, Search and "راحة" Button
+      // Action buttons: Search and "راحة" Button (Settings gear icon removed as requested)
       Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
       ) {
-        if (onSettingsClick != null) {
-          IconButton(
-            onClick = onSettingsClick,
-            modifier = Modifier
-              .size(38.dp)
-              .clip(CircleShape)
-              .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
-          ) {
-            Icon(
-              imageVector = Icons.Outlined.Settings,
-              contentDescription = "الإعدادات والضبط",
-              tint = MaterialTheme.colorScheme.onSurface,
-              modifier = Modifier.size(20.dp)
-            )
-          }
-        }
-
         // Global Search Lens Button
         IconButton(
           onClick = onSearchClick,
           modifier = Modifier
             .size(38.dp)
             .clip(CircleShape)
-            .background(GoalBlueBg)
+            .background(MaterialTheme.colorScheme.primaryContainer)
         ) {
           Icon(
             imageVector = Icons.Outlined.Search,
-            contentDescription = "البحث الشامل",
+            contentDescription = AppStrings.search(language),
             tint = BrightBlue,
             modifier = Modifier.size(20.dp)
           )
         }
 
-        // "راحة" (Rest Day) Button
+        // "راحة" / "Rest" Button
         Box(
           modifier = Modifier
             .clip(RoundedCornerShape(20.dp))
@@ -182,13 +177,13 @@ fun MyOSHeader(
           ) {
             Icon(
               imageVector = Icons.Outlined.FreeBreakfast,
-              contentDescription = "وضع الراحة",
+              contentDescription = AppStrings.restMode(language),
               tint = restTextColor,
               modifier = Modifier.size(18.dp)
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-              text = "راحة",
+              text = AppStrings.restMode(language),
               style = MaterialTheme.typography.labelMedium.copy(
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp

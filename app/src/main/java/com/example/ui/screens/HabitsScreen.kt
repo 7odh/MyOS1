@@ -142,18 +142,22 @@ fun HabitsScreen(
     }
   }
 
+  val lang = uiState.appSettings.language
+  val isArabic = lang == com.example.model.AppLanguage.ARABIC
+
   ModalNavigationDrawer(
     drawerState = drawerState,
     drawerContent = {
       ModalDrawerSheet(
-        drawerContainerColor = SurfaceWhite
+        drawerContainerColor = MaterialTheme.colorScheme.surface
       ) {
         NavigationDrawerContent(
           currentScreen = uiState.currentScreen,
           onScreenSelected = onScreenSelected,
           onCloseDrawer = {
             scope.launch { drawerState.close() }
-          }
+          },
+          language = lang
         )
       }
     }
@@ -168,13 +172,16 @@ fun HabitsScreen(
           onRestModeToggle = onToggleRestMode,
           onSearchClick = {
             onScreenSelected(ScreenDestination.SEARCH)
-          }
+          },
+          language = lang
         )
       },
       bottomBar = {
         MyOSBottomNavigationBar(
           currentScreen = uiState.currentScreen,
           onTabSelected = onScreenSelected,
+          destinations = uiState.appSettings.bottomNavTabs,
+          language = lang,
           onMoreClick = {
             scope.launch { drawerState.open() }
           }
@@ -202,14 +209,14 @@ fun HabitsScreen(
         ) {
           Icon(
             imageVector = Icons.Default.Add,
-            contentDescription = "إضافة عادة",
+            contentDescription = if (isArabic) "إضافة عادة" else "Add Habit",
             tint = TextWhite,
             modifier = Modifier.size(28.dp)
           )
         }
       },
       snackbarHost = { SnackbarHost(snackbarHostState) },
-      containerColor = BackgroundLight,
+      containerColor = MaterialTheme.colorScheme.background,
       modifier = modifier
     ) { innerPadding ->
       Box(
@@ -231,10 +238,10 @@ fun HabitsScreen(
             modifier = Modifier
               .fillMaxWidth()
               .clip(RoundedCornerShape(22.dp))
-              .border(1.dp, BorderLight.copy(alpha = 0.8f), RoundedCornerShape(22.dp)),
+              .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(22.dp)),
             shape = RoundedCornerShape(22.dp),
-            colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
           ) {
             Column(
               modifier = Modifier
@@ -251,12 +258,12 @@ fun HabitsScreen(
                     modifier = Modifier
                       .size(38.dp)
                       .clip(CircleShape)
-                      .background(HabitEmeraldBg),
+                      .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                   ) {
                     Icon(
                       imageVector = Icons.Outlined.Spa,
-                      contentDescription = "العادات",
+                      contentDescription = com.example.model.AppStrings.habits(lang),
                       tint = HabitEmerald,
                       modifier = Modifier.size(22.dp)
                     )
@@ -264,17 +271,17 @@ fun HabitsScreen(
                   Spacer(modifier = Modifier.width(10.dp))
                   Column {
                     Text(
-                      text = "العادات والروتين",
+                      text = if (isArabic) "العادات والروتين" else "Habits & Routine",
                       style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
                       ),
-                      color = TextPrimary
+                      color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                      text = "بناء الانضباط اليومي والأسبوعي",
+                      text = if (isArabic) "بناء الانضباط اليومي والأسبوعي" else "Building daily and weekly consistency",
                       style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                      color = TextSecondary
+                      color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                   }
                 }
@@ -292,7 +299,7 @@ fun HabitsScreen(
                     modifier = Modifier.size(16.dp)
                   )
                   Spacer(modifier = Modifier.width(4.dp))
-                  Text(text = "عادة جديدة", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                  Text(text = if (isArabic) "عادة جديدة" else "New Habit", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
               }
 
@@ -312,7 +319,7 @@ fun HabitsScreen(
                 // Metric 1: Today completed
                 HabitMetricMiniBox(
                   icon = Icons.Outlined.CheckCircle,
-                  title = "عادات اليوم",
+                  title = if (isArabic) "عادات اليوم" else "Today's",
                   value = "$completedTodayCount / ${todayHabits.size}",
                   accentColor = HabitEmerald,
                   modifier = Modifier.weight(1f)
@@ -321,7 +328,7 @@ fun HabitsScreen(
                 // Metric 2: Mandatory
                 HabitMetricMiniBox(
                   icon = Icons.Outlined.Shield,
-                  title = "إجبارية",
+                  title = if (isArabic) "إجبارية" else "Mandatory",
                   value = "$mandatoryCount",
                   accentColor = BrightBlue,
                   modifier = Modifier.weight(1f)
@@ -330,8 +337,8 @@ fun HabitsScreen(
                 // Metric 3: Rest mode status
                 HabitMetricMiniBox(
                   icon = Icons.Outlined.Coffee,
-                  title = "وضع الراحة",
-                  value = if (uiState.user.isRestModeActive) "مفعّل ☕" else "نشط ⚡",
+                  title = if (isArabic) "وضع الراحة" else "Rest Mode",
+                  value = if (uiState.user.isRestModeActive) (if (isArabic) "مفعّل ☕" else "Active ☕") else (if (isArabic) "غير مفعّل" else "Off"),
                   accentColor = if (uiState.user.isRestModeActive) Color(0xFFD97706) else Color(0xFF6366F1),
                   modifier = Modifier.weight(1f)
                 )
@@ -353,10 +360,10 @@ fun HabitsScreen(
               Box(
                 modifier = Modifier
                   .clip(RoundedCornerShape(12.dp))
-                  .background(if (isSelected) HabitEmerald else Color(0xFFF1F5F9))
+                  .background(if (isSelected) HabitEmerald else MaterialTheme.colorScheme.surface)
                   .border(
                     width = 1.dp,
-                    color = if (isSelected) HabitEmerald else BorderLight,
+                    color = if (isSelected) HabitEmerald else MaterialTheme.colorScheme.outlineVariant,
                     shape = RoundedCornerShape(12.dp)
                   )
                   .clickable { onSetHabitFilter(filter) }
@@ -364,12 +371,12 @@ fun HabitsScreen(
                 contentAlignment = Alignment.Center
               ) {
                 Text(
-                  text = filter.titleArabic,
+                  text = filter.getTitle(lang),
                   style = MaterialTheme.typography.bodySmall.copy(
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                     fontSize = 12.sp
                   ),
-                  color = if (isSelected) TextWhite else TextSecondary
+                  color = if (isSelected) TextWhite else MaterialTheme.colorScheme.onSurfaceVariant
                 )
               }
             }
@@ -559,8 +566,8 @@ private fun HabitMetricMiniBox(
   Box(
     modifier = modifier
       .clip(RoundedCornerShape(14.dp))
-      .background(Color(0xFFF8FAFC))
-      .border(1.dp, BorderLight.copy(alpha = 0.6f), RoundedCornerShape(14.dp))
+      .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+      .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp))
       .padding(10.dp)
   ) {
     Column(
@@ -580,13 +587,13 @@ private fun HabitMetricMiniBox(
           fontWeight = FontWeight.Bold,
           fontSize = 14.sp
         ),
-        color = TextPrimary
+        color = MaterialTheme.colorScheme.onSurface
       )
       Spacer(modifier = Modifier.height(2.dp))
       Text(
         text = title,
         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-        color = TextSecondary
+        color = MaterialTheme.colorScheme.onSurfaceVariant
       )
     }
   }

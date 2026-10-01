@@ -1,9 +1,9 @@
 package com.example.model
 
-enum class CalendarViewMode(val titleArabic: String, val iconText: String) {
-  MONTH("شهري", "🗓️"),
-  WEEK("أسبوعي", "📅"),
-  AGENDA("أجندة", "📋")
+enum class CalendarViewMode(val titleArabic: String, val titleEnglish: String, val iconText: String) {
+  MONTH("شهري", "Month", "🗓️"),
+  WEEK("أسبوعي", "Week", "📅"),
+  AGENDA("أجندة", "Agenda", "📋")
 }
 
 data class DayHabitRecord(

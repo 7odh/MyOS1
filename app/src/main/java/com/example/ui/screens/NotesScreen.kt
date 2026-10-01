@@ -133,15 +133,18 @@ fun NotesScreen(
 
   // Quick capture field state at top
   var quickTitle by remember { mutableStateOf("") }
+  val lang = uiState.appSettings.language
+  val isArabic = lang == com.example.model.AppLanguage.ARABIC
 
   ModalNavigationDrawer(
     drawerState = drawerState,
     drawerContent = {
-      ModalDrawerSheet(drawerContainerColor = SurfaceWhite) {
+      ModalDrawerSheet(drawerContainerColor = MaterialTheme.colorScheme.surface) {
         NavigationDrawerContent(
           currentScreen = ScreenDestination.NOTES,
           onScreenSelected = onScreenSelected,
-          onCloseDrawer = { scope.launch { drawerState.close() } }
+          onCloseDrawer = { scope.launch { drawerState.close() } },
+          language = lang
         )
       }
     }
@@ -149,7 +152,7 @@ fun NotesScreen(
     Scaffold(
       topBar = {
         Surface(
-          color = SurfaceWhite,
+          color = MaterialTheme.colorScheme.surface,
           shadowElevation = 1.dp
         ) {
           Column(
@@ -172,14 +175,14 @@ fun NotesScreen(
                 ) {
                   Icon(
                     imageVector = Icons.Outlined.Menu,
-                    contentDescription = "القائمة",
+                    contentDescription = if (isArabic) "القائمة" else "Menu",
                     tint = TextPrimary
                   )
                 }
                 Spacer(modifier = Modifier.width(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                   Text(
-                    text = "💡 مخزن الأفكار",
+                    text = if (isArabic) "💡 مخزن الأفكار" else "💡 Notes & Ideas",
                     style = MaterialTheme.typography.titleMedium.copy(
                       fontWeight = FontWeight.Bold,
                       fontSize = 17.sp
@@ -301,6 +304,7 @@ fun NotesScreen(
         MyOSBottomNavigationBar(
           currentScreen = ScreenDestination.NOTES,
           onTabSelected = onScreenSelected,
+          language = lang,
           onMoreClick = { scope.launch { drawerState.open() } }
         )
       },

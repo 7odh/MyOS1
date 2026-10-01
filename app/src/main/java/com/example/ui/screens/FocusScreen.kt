@@ -45,6 +45,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
@@ -172,17 +173,20 @@ fun FocusScreen(
     }
   }
 
+  val lang = uiState.appSettings.language
+
   ModalNavigationDrawer(
     drawerState = drawerState,
     drawerContent = {
       ModalDrawerSheet(
-        drawerContainerColor = SurfaceWhite,
+        drawerContainerColor = MaterialTheme.colorScheme.surface,
         modifier = Modifier.width(280.dp)
       ) {
         NavigationDrawerContent(
           currentScreen = ScreenDestination.FOCUS,
           onScreenSelected = onScreenSelected,
-          onCloseDrawer = { scope.launch { drawerState.close() } }
+          onCloseDrawer = { scope.launch { drawerState.close() } },
+          language = lang
         )
       }
     }
@@ -195,13 +199,15 @@ fun FocusScreen(
           isRestModeActive = uiState.user.isRestModeActive,
           onMenuClick = { scope.launch { drawerState.open() } },
           onRestModeToggle = onToggleRestMode,
-          onSearchClick = { onScreenSelected(ScreenDestination.SEARCH) }
+          onSearchClick = { onScreenSelected(ScreenDestination.SEARCH) },
+          language = lang
         )
       },
       bottomBar = {
         MyOSBottomNavigationBar(
           currentScreen = ScreenDestination.FOCUS,
           onTabSelected = onScreenSelected,
+          language = lang,
           onMoreClick = { scope.launch { drawerState.open() } }
         )
       },

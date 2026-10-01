@@ -1,7 +1,6 @@
 package com.example.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -24,9 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.outlined.TrackChanges
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -41,23 +38,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.model.AppLanguage
 import com.example.model.Goal
 import com.example.model.Priority
 import com.example.model.Task
-import com.example.ui.theme.BorderLight
 import com.example.ui.theme.GoalBlue
-import com.example.ui.theme.GoalBlueBg
-import com.example.ui.theme.HabitEmerald
 import com.example.ui.theme.PriorityHigh
 import com.example.ui.theme.PriorityLow
-import com.example.ui.theme.SurfaceCard
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
-import com.example.ui.theme.TextWhite
 
 @Composable
 fun GoalAccordionItem(
@@ -66,8 +55,11 @@ fun GoalAccordionItem(
   onToggleExpand: () -> Unit,
   onToggleGoalTask: (taskId: String) -> Unit,
   onPostponeGoalTask: ((taskId: String) -> Unit)? = null,
+  language: AppLanguage = AppLanguage.ARABIC,
   modifier: Modifier = Modifier
 ) {
+  val isDark = MaterialTheme.colorScheme.background.red < 0.2f
+
   val rotationAngle by animateFloatAsState(
     targetValue = if (isExpanded) 180f else 0f,
     animationSpec = tween(durationMillis = 250),
@@ -78,13 +70,13 @@ fun GoalAccordionItem(
     modifier = modifier
       .fillMaxWidth()
       .clip(RoundedCornerShape(16.dp))
-      .border(1.dp, BorderLight.copy(alpha = 0.8f), RoundedCornerShape(16.dp)),
+      .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp)),
     shape = RoundedCornerShape(16.dp),
-    colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
   ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-      // 1. Goal Header (Clicking toggles accordion expansion ONLY)
+      // 1. Goal Header
       Row(
         modifier = Modifier
           .fillMaxWidth()
@@ -94,11 +86,13 @@ fun GoalAccordionItem(
       ) {
         // Goal Icon
         val iconOption = com.example.model.GoalIconProvider.getIcon(goal.iconId)
+        val iconBgColor = if (isDark) iconOption.tintColor.copy(alpha = 0.2f) else iconOption.bgColor
+
         Box(
           modifier = Modifier
             .size(34.dp)
             .clip(CircleShape)
-            .background(iconOption.bgColor),
+            .background(iconBgColor),
           contentAlignment = Alignment.Center
         ) {
           Icon(
@@ -119,7 +113,7 @@ fun GoalAccordionItem(
               fontWeight = FontWeight.Bold,
               fontSize = 14.sp
             ),
-            color = TextPrimary
+            color = MaterialTheme.colorScheme.onSurface
           )
           if (!goal.category.isNullOrBlank()) {
             Spacer(modifier = Modifier.height(2.dp))
@@ -128,7 +122,7 @@ fun GoalAccordionItem(
               style = MaterialTheme.typography.bodySmall.copy(
                 fontSize = 11.sp
               ),
-              color = TextSecondary
+              color = MaterialTheme.colorScheme.onSurfaceVariant
             )
           }
         }
@@ -136,11 +130,24 @@ fun GoalAccordionItem(
         Spacer(modifier = Modifier.width(8.dp))
 
         // Goal Priority Badge
-        val (goalPriorityText, goalPriorityColor, goalPriorityBg) = when (goal.priority) {
-          Priority.HIGH -> Triple("عالية", PriorityHigh, Color(0xFFFEF2F2))
-          Priority.MEDIUM -> Triple("متوسطة", Color(0xFFD97706), Color(0xFFFFFBEB))
-          Priority.LOW -> Triple("منخفضة", PriorityLow, Color(0xFFF1F5F9))
-          Priority.NONE -> Triple("بدون أولوية", TextSecondary, Color(0xFFF8FAFC))
+        val priorityLabel = goal.priority.getTitle(language)
+        val (goalPriorityColor, goalPriorityBg) = when (goal.priority) {
+          Priority.HIGH -> Pair(
+            PriorityHigh,
+            if (isDark) Color(0xFF3B1A1A) else Color(0xFFFEF2F2)
+          )
+          Priority.MEDIUM -> Pair(
+            Color(0xFFF59E0B),
+            if (isDark) Color(0xFF382A13) else Color(0xFFFFFBEB)
+          )
+          Priority.LOW -> Pair(
+            PriorityLow,
+            if (isDark) Color(0xFF1E2838) else Color(0xFFF1F5F9)
+          )
+          Priority.NONE -> Pair(
+            MaterialTheme.colorScheme.onSurfaceVariant,
+            if (isDark) Color(0xFF19202E) else Color(0xFFF8FAFC)
+          )
         }
 
         Box(
@@ -150,7 +157,7 @@ fun GoalAccordionItem(
             .padding(horizontal = 6.dp, vertical = 2.dp)
         ) {
           Text(
-            text = goalPriorityText,
+            text = priorityLabel,
             style = MaterialTheme.typography.labelSmall.copy(
               fontSize = 10.sp,
               fontWeight = FontWeight.Bold
@@ -176,8 +183,12 @@ fun GoalAccordionItem(
         // Expand/Collapse Chevron Indicator
         Icon(
           imageVector = Icons.Default.KeyboardArrowDown,
-          contentDescription = if (isExpanded) "طي" else "توسيع",
-          tint = TextSecondary,
+          contentDescription = if (isExpanded) {
+            if (language == AppLanguage.ARABIC) "طي" else "Collapse"
+          } else {
+            if (language == AppLanguage.ARABIC) "توسيع" else "Expand"
+          },
+          tint = MaterialTheme.colorScheme.onSurfaceVariant,
           modifier = Modifier
             .size(20.dp)
             .rotate(rotationAngle)
@@ -193,158 +204,37 @@ fun GoalAccordionItem(
         Column(
           modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFFFAFAFC))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
             .padding(horizontal = 14.dp, vertical = 8.dp)
         ) {
           HorizontalDivider(
-            color = BorderLight.copy(alpha = 0.5f),
-            thickness = 0.8.dp,
-            modifier = Modifier.padding(bottom = 6.dp)
+            color = MaterialTheme.colorScheme.outlineVariant,
+            thickness = 0.5.dp
           )
+          Spacer(modifier = Modifier.height(8.dp))
 
-          val todayTasks = goal.todayTasks
-
-          if (todayTasks.isEmpty()) {
-            // Subtle empty state message when expanded
+          val todayGoalTasks = goal.todayTasks
+          if (todayGoalTasks.isEmpty()) {
             Text(
-              text = "لا توجد مهام لهذا الهدف اليوم",
-              style = MaterialTheme.typography.bodySmall.copy(
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Normal
-              ),
-              color = TextMuted,
-              modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)
+              text = if (language == AppLanguage.ARABIC) "لا توجد مهام مجدولة لهذا الهدف اليوم" else "No tasks scheduled for this goal today",
+              style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              modifier = Modifier.padding(vertical = 4.dp)
             )
           } else {
-            // List of today's tasks belonging to this goal
-            todayTasks.forEach { task ->
-              GoalTaskAccordionRow(
+            todayGoalTasks.forEach { task ->
+              TaskItemRow(
                 task = task,
                 onToggle = { onToggleGoalTask(task.id) },
-                onPostpone = if (onPostponeGoalTask != null) { { onPostponeGoalTask(task.id) } } else null
+                onPostpone = if (onPostponeGoalTask != null) {
+                  { onPostponeGoalTask(task.id) }
+                } else null,
+                language = language
               )
+              Spacer(modifier = Modifier.height(4.dp))
             }
           }
         }
-      }
-    }
-  }
-}
-
-@Composable
-private fun GoalTaskAccordionRow(
-  task: Task,
-  onToggle: () -> Unit,
-  onPostpone: (() -> Unit)? = null,
-  modifier: Modifier = Modifier
-) {
-  val checkBgColor by animateColorAsState(
-    targetValue = if (task.isCompleted) HabitEmerald else Color.Transparent,
-    animationSpec = tween(durationMillis = 200),
-    label = "taskCheckBg"
-  )
-
-  val checkBorderColor by animateColorAsState(
-    targetValue = if (task.isCompleted) HabitEmerald else BorderLight,
-    animationSpec = tween(durationMillis = 200),
-    label = "taskCheckBorder"
-  )
-
-  Row(
-    modifier = modifier
-      .fillMaxWidth()
-      .clickable(onClick = onToggle)
-      .padding(vertical = 7.dp, horizontal = 4.dp),
-    verticalAlignment = Alignment.CenterVertically
-  ) {
-    // Checkbox circle
-    Box(
-      modifier = Modifier
-        .size(20.dp)
-        .clip(CircleShape)
-        .background(checkBgColor)
-        .border(1.5.dp, checkBorderColor, CircleShape),
-      contentAlignment = Alignment.Center
-    ) {
-      if (task.isCompleted) {
-        Icon(
-          imageVector = Icons.Default.Check,
-          contentDescription = "مكتملة",
-          tint = TextWhite,
-          modifier = Modifier.size(13.dp)
-        )
-      }
-    }
-
-    Spacer(modifier = Modifier.width(10.dp))
-
-    // Task title (with subtle completed state and strikethrough if completed)
-    Text(
-      text = task.title,
-      style = MaterialTheme.typography.bodyMedium.copy(
-        fontSize = 13.sp,
-        fontWeight = if (task.isCompleted) FontWeight.Normal else FontWeight.Medium,
-        textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null
-      ),
-      color = if (task.isCompleted) TextSecondary.copy(alpha = 0.65f) else TextPrimary,
-      modifier = Modifier.weight(1f)
-    )
-
-    // Postpone action if not completed, or postponed badge if already postponed
-    if (!task.isCompleted && onPostpone != null) {
-      Spacer(modifier = Modifier.width(6.dp))
-      Box(
-        modifier = Modifier
-          .clip(RoundedCornerShape(8.dp))
-          .background(Color(0xFFEFF6FF))
-          .clickable { onPostpone() }
-          .padding(horizontal = 6.dp, vertical = 2.dp)
-      ) {
-        Text(
-          text = "ترحيل ➡️",
-          style = MaterialTheme.typography.labelSmall.copy(
-            fontSize = 9.sp,
-            fontWeight = FontWeight.SemiBold
-          ),
-          color = GoalBlue
-        )
-      }
-    } else if (task.isPostponed) {
-      Spacer(modifier = Modifier.width(6.dp))
-      Box(
-        modifier = Modifier
-          .clip(RoundedCornerShape(8.dp))
-          .background(Color(0xFFFFFBEB))
-          .padding(horizontal = 6.dp, vertical = 2.dp)
-      ) {
-        Text(
-          text = "مُرحّلة ➡️",
-          style = MaterialTheme.typography.labelSmall.copy(
-            fontSize = 9.sp,
-            fontWeight = FontWeight.Bold
-          ),
-          color = Color(0xFFD97706)
-        )
-      }
-    }
-
-    // Optional Priority tag if High
-    if (task.priority == Priority.HIGH) {
-      Spacer(modifier = Modifier.width(6.dp))
-      Box(
-        modifier = Modifier
-          .clip(RoundedCornerShape(8.dp))
-          .background(Color(0xFFFEF2F2))
-          .padding(horizontal = 6.dp, vertical = 2.dp)
-      ) {
-        Text(
-          text = "عالية",
-          style = MaterialTheme.typography.labelSmall.copy(
-            fontSize = 9.sp,
-            fontWeight = FontWeight.Medium
-          ),
-          color = PriorityHigh
-        )
       }
     }
   }

@@ -138,14 +138,15 @@ fun HomeScreen(
     drawerState = drawerState,
     drawerContent = {
       ModalDrawerSheet(
-        drawerContainerColor = SurfaceWhite
+        drawerContainerColor = MaterialTheme.colorScheme.surface
       ) {
         NavigationDrawerContent(
           currentScreen = uiState.currentScreen,
           onScreenSelected = onScreenSelected,
           onCloseDrawer = {
             scope.launch { drawerState.close() }
-          }
+          },
+          language = uiState.appSettings.language
         )
       }
     }
@@ -161,9 +162,7 @@ fun HomeScreen(
           onSearchClick = {
             onScreenSelected(ScreenDestination.SEARCH)
           },
-          onSettingsClick = {
-            onScreenSelected(ScreenDestination.SETTINGS)
-          }
+          language = uiState.appSettings.language
         )
       },
       bottomBar = {
@@ -199,7 +198,7 @@ fun HomeScreen(
         ) {
           Icon(
             imageVector = Icons.Default.Add,
-            contentDescription = "إضافة سريعة",
+            contentDescription = if (uiState.appSettings.language == com.example.model.AppLanguage.ARABIC) "إضافة سريعة" else "Quick Add",
             tint = TextWhite,
             modifier = Modifier.size(28.dp)
           )
@@ -228,7 +227,8 @@ fun HomeScreen(
             motivationalSentence = uiState.user.motivationalSentence,
             isMotivationEnabled = uiState.user.isMotivationEnabled,
             onEditNameClick = onEditNameClick,
-            onRotateQuote = onRotateQuote
+            onRotateQuote = onRotateQuote,
+            language = uiState.appSettings.language
           )
 
           Spacer(modifier = Modifier.height(4.dp))
@@ -238,7 +238,8 @@ fun HomeScreen(
             analytics = uiState.dailyAnalytics,
             onNavigateToAnalytics = {
               onScreenSelected(ScreenDestination.ANALYTICS)
-            }
+            },
+            language = uiState.appSettings.language
           )
 
           Spacer(modifier = Modifier.height(6.dp))
@@ -261,7 +262,8 @@ fun HomeScreen(
             },
             onNavigateToTasks = {
               onScreenSelected(ScreenDestination.TASKS)
-            }
+            },
+            language = uiState.appSettings.language
           )
 
           Spacer(modifier = Modifier.height(32.dp))
@@ -274,7 +276,8 @@ fun HomeScreen(
   QuickAddBottomSheet(
     isVisible = uiState.isQuickAddSheetVisible,
     onDismiss = onCloseQuickAdd,
-    onOptionSelected = onQuickAddOptionSelected
+    onOptionSelected = onQuickAddOptionSelected,
+    language = uiState.appSettings.language
   )
 
   // Edit Name Dialog

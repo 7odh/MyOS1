@@ -76,6 +76,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.CalendarViewMode
+import com.example.model.AppLanguage
+import com.example.model.AppStrings
 import com.example.model.DayHabitRecord
 import com.example.model.DaySummaryHistory
 import com.example.model.DayTaskRecord
@@ -145,19 +147,28 @@ fun CalendarScreen(
   val selectedDate = uiState.selectedCalendarDate
   val daySummary = uiState.selectedDaySummary
 
+  val lang = uiState.appSettings.language
+  val isArabic = lang == AppLanguage.ARABIC
+
   val arabicMonths = listOf(
     "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
     "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
   )
+  val englishMonths = listOf(
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  )
+  val displayMonths = if (isArabic) arabicMonths else englishMonths
 
   ModalNavigationDrawer(
     drawerState = drawerState,
     drawerContent = {
-      ModalDrawerSheet(drawerContainerColor = SurfaceWhite) {
+      ModalDrawerSheet(drawerContainerColor = MaterialTheme.colorScheme.surface) {
         NavigationDrawerContent(
           currentScreen = ScreenDestination.CALENDAR,
           onScreenSelected = onScreenSelected,
-          onCloseDrawer = { scope.launch { drawerState.close() } }
+          onCloseDrawer = { scope.launch { drawerState.close() } },
+          language = lang
         )
       }
     }
@@ -165,7 +176,7 @@ fun CalendarScreen(
     Scaffold(
       topBar = {
         Surface(
-          color = SurfaceWhite,
+          color = MaterialTheme.colorScheme.surface,
           shadowElevation = 1.dp
         ) {
           Column(
@@ -197,7 +208,7 @@ fun CalendarScreen(
 
                 // Month / Year Title
                 Text(
-                  text = "${arabicMonths[displayMonth]} $displayYear",
+                  text = "${displayMonths[displayMonth]} $displayYear",
                   style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.sp
@@ -277,7 +288,7 @@ fun CalendarScreen(
                     .background(GoalBlueBg)
                 ) {
                   Text(
-                    text = "اليوم ⚡",
+                    text = if (isArabic) "اليوم ⚡" else "Today ⚡",
                     style = MaterialTheme.typography.labelMedium.copy(
                       fontWeight = FontWeight.Bold,
                       fontSize = 12.sp
@@ -302,7 +313,7 @@ fun CalendarScreen(
                   onClick = { onChangeViewMode(mode) },
                   label = {
                     Text(
-                      text = "${mode.iconText} ${mode.titleArabic}",
+                      text = "${mode.iconText} ${if (isArabic) mode.titleArabic else mode.titleEnglish}",
                       style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                         fontSize = 12.sp
@@ -328,6 +339,7 @@ fun CalendarScreen(
         MyOSBottomNavigationBar(
           currentScreen = ScreenDestination.CALENDAR,
           onTabSelected = onScreenSelected,
+          language = lang,
           onMoreClick = { scope.launch { drawerState.open() } }
         )
       },
@@ -358,21 +370,24 @@ fun CalendarScreen(
                 month = displayMonth,
                 selectedDate = selectedDate,
                 todayDate = getTodayDateString(),
-                onDateSelected = onSelectDate
+                onDateSelected = onSelectDate,
+                isArabic = isArabic
               )
             }
             CalendarViewMode.WEEK -> {
               WeekCalendarView(
                 selectedDate = selectedDate,
                 todayDate = getTodayDateString(),
-                onDateSelected = onSelectDate
+                onDateSelected = onSelectDate,
+                isArabic = isArabic
               )
             }
             CalendarViewMode.AGENDA -> {
               AgendaQuickPicker(
                 selectedDate = selectedDate,
                 todayDate = getTodayDateString(),
-                onDateSelected = onSelectDate
+                onDateSelected = onSelectDate,
+                isArabic = isArabic
               )
             }
           }
@@ -408,6 +423,7 @@ private fun MonthCalendarView(
   selectedDate: String,
   todayDate: String,
   onDateSelected: (String) -> Unit,
+  isArabic: Boolean = true,
   modifier: Modifier = Modifier
 ) {
   Card(
@@ -421,8 +437,12 @@ private fun MonthCalendarView(
     elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
   ) {
     Column(modifier = Modifier.padding(12.dp)) {
-      // Weekday Header Row (Saturday to Friday in Arabic)
-      val weekDays = listOf("سبت", "أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة")
+      // Weekday Header Row (Saturday to Friday)
+      val weekDays = if (isArabic) {
+        listOf("سبت", "أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة")
+      } else {
+        listOf("Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri")
+      }
       Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceAround
@@ -618,6 +638,7 @@ private fun WeekCalendarView(
   selectedDate: String,
   todayDate: String,
   onDateSelected: (String) -> Unit,
+  isArabic: Boolean = true,
   modifier: Modifier = Modifier
 ) {
   val sdf = SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH)
@@ -640,7 +661,11 @@ private fun WeekCalendarView(
   }
   cal.add(Calendar.DAY_OF_YEAR, -daysBack)
 
-  val weekDaysArabic = listOf("السبت", "الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة")
+  val weekDays = if (isArabic) {
+    listOf("السبت", "الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة")
+  } else {
+    listOf("Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri")
+  }
 
   Card(
     modifier = modifier
@@ -661,7 +686,7 @@ private fun WeekCalendarView(
       for (i in 0 until 7) {
         val dateStr = sdf.format(cal.time)
         val dayNum = cal.get(Calendar.DAY_OF_MONTH)
-        val dayName = weekDaysArabic[i]
+        val dayName = weekDays[i]
         val isSelected = dateStr == selectedDate
         val isToday = dateStr == todayDate
 
@@ -737,6 +762,7 @@ private fun AgendaQuickPicker(
   selectedDate: String,
   todayDate: String,
   onDateSelected: (String) -> Unit,
+  isArabic: Boolean = true,
   modifier: Modifier = Modifier
 ) {
   val sdf = SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH)
@@ -772,9 +798,9 @@ private fun AgendaQuickPicker(
       }
 
       val displayLabel = when (dKey) {
-        todayDate -> "اليوم ⚡"
-        com.example.data.getDateOffsetKey(-1) -> "أمس"
-        com.example.data.getDateOffsetKey(1) -> "غداً"
+        todayDate -> if (isArabic) "اليوم ⚡" else "Today ⚡"
+        com.example.data.getDateOffsetKey(-1) -> if (isArabic) "أمس" else "Yesterday"
+        com.example.data.getDateOffsetKey(1) -> if (isArabic) "غداً" else "Tomorrow"
         else -> dKey.substring(5) // MM/dd
       }
 

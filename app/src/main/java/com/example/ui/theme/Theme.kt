@@ -10,21 +10,22 @@ import com.example.model.ThemeMode
 private val MyOSLightColorScheme = lightColorScheme(
   primary = IndigoPrimary,
   onPrimary = TextWhite,
-  primaryContainer = GoalBlueBg,
+  primaryContainer = LightGoalBlueBg,
   onPrimaryContainer = DeepBlue,
   secondary = BrightBlue,
   onSecondary = TextWhite,
-  secondaryContainer = RestLavenderBg,
-  onSecondaryContainer = RestLavenderText,
+  secondaryContainer = LightRestLavenderBg,
+  onSecondaryContainer = LightRestLavenderText,
   tertiary = ElectricCyan,
-  onTertiary = TextPrimary,
-  background = BackgroundLight,
-  onBackground = TextPrimary,
-  surface = SurfaceWhite,
-  onSurface = TextPrimary,
-  surfaceVariant = BorderVeryLight,
-  onSurfaceVariant = TextSecondary,
-  outline = BorderLight
+  onTertiary = LightTextPrimary,
+  background = LightBackground,
+  onBackground = LightTextPrimary,
+  surface = LightSurface,
+  onSurface = LightTextPrimary,
+  surfaceVariant = LightBorderVeryLight,
+  onSurfaceVariant = LightTextSecondary,
+  outline = LightBorder,
+  outlineVariant = LightBorder.copy(alpha = 0.6f)
 )
 
 private val MyOSDarkColorScheme = darkColorScheme(
@@ -44,7 +45,8 @@ private val MyOSDarkColorScheme = darkColorScheme(
   onSurface = TextPrimaryDark,
   surfaceVariant = SurfaceCardDark,
   onSurfaceVariant = TextSecondaryDark,
-  outline = BorderDark
+  outline = BorderDark,
+  outlineVariant = BorderVeryLightDark
 )
 
 @Composable
@@ -64,4 +66,3 @@ fun MyApplicationTheme(
     content = content
   )
 }
-

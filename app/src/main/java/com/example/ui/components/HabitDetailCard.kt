@@ -75,13 +75,14 @@ fun HabitDetailCard(
   val isExceeded = habit.currentValue > habit.targetValue
   val isOnRestToday = isRestModeActive && !habit.isMandatory
   val isPaused = habit.isCurrentlyPaused
+  val isDark = MaterialTheme.colorScheme.background.red < 0.2f
 
   val cardBorderColor by animateColorAsState(
     targetValue = when {
       isPaused -> Color(0xFFF59E0B).copy(alpha = 0.5f)
       isCompleted -> HabitEmerald.copy(alpha = 0.5f)
       isOnRestToday -> Color(0xFFD97706).copy(alpha = 0.3f)
-      else -> BorderLight.copy(alpha = 0.8f)
+      else -> MaterialTheme.colorScheme.outlineVariant
     },
     animationSpec = tween(250),
     label = "cardBorderColor"
@@ -95,10 +96,10 @@ fun HabitDetailCard(
     shape = RoundedCornerShape(20.dp),
     colors = CardDefaults.cardColors(
       containerColor = when {
-        isPaused -> Color(0xFFFFFDF5)
-        isCompleted -> Color(0xFFF9FDFB)
-        isOnRestToday -> Color(0xFFFFFDF5)
-        else -> SurfaceCard
+        isPaused -> if (isDark) Color(0xFF262015) else Color(0xFFFFFDF5)
+        isCompleted -> if (isDark) Color(0xFF132A22) else Color(0xFFF9FDFB)
+        isOnRestToday -> if (isDark) Color(0xFF251E38) else Color(0xFFFFFDF5)
+        else -> MaterialTheme.colorScheme.surface
       }
     ),
     elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
@@ -123,7 +124,7 @@ fun HabitDetailCard(
             modifier = Modifier
               .size(44.dp)
               .clip(RoundedCornerShape(14.dp))
-              .background(if (isCompleted) HabitEmeraldBg else Color(0xFFF1F5F9)),
+              .background(if (isCompleted) (if (isDark) HabitEmerald.copy(alpha = 0.2f) else HabitEmeraldBg) else MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
           ) {
             Text(text = habit.iconEmoji, fontSize = 22.sp)
@@ -138,7 +139,7 @@ fun HabitDetailCard(
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp
               ),
-              color = TextPrimary
+              color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(2.dp))
             // Schedule & frequency info
@@ -146,7 +147,7 @@ fun HabitDetailCard(
               Text(
                 text = habit.scheduleDescription,
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                color = TextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
               )
               if (habit.currentStreak > 0) {
                 Spacer(modifier = Modifier.width(8.dp))
@@ -179,7 +180,7 @@ fun HabitDetailCard(
             Box(
               modifier = Modifier
                 .clip(RoundedCornerShape(10.dp))
-                .background(Color(0xFFDCFCE7))
+                .background(if (isDark) Color(0xFF143022) else Color(0xFFDCFCE7))
                 .clickable(onClick = onResumeHabit)
                 .padding(horizontal = 8.dp, vertical = 5.dp),
               contentAlignment = Alignment.Center
@@ -208,7 +209,7 @@ fun HabitDetailCard(
               modifier = Modifier
                 .size(30.dp)
                 .clip(CircleShape)
-                .background(Color(0xFFFEF3C7))
+                .background(if (isDark) Color(0xFF382A13) else Color(0xFFFEF3C7))
                 .clickable(onClick = onOpenPauseDialog),
               contentAlignment = Alignment.Center
             ) {
@@ -227,7 +228,7 @@ fun HabitDetailCard(
             modifier = Modifier
               .size(30.dp)
               .clip(CircleShape)
-              .background(Color(0xFFEFF6FF))
+              .background(if (isDark) Color(0xFF1B2740) else Color(0xFFEFF6FF))
               .clickable(onClick = onEditHabit),
             contentAlignment = Alignment.Center
           ) {
@@ -245,7 +246,7 @@ fun HabitDetailCard(
             modifier = Modifier
               .size(30.dp)
               .clip(CircleShape)
-              .background(Color(0xFFFEE2E2))
+              .background(if (isDark) Color(0xFF3B1A1A) else Color(0xFFFEE2E2))
               .clickable(onClick = onDeleteHabit),
             contentAlignment = Alignment.Center
           ) {
@@ -325,13 +326,13 @@ fun HabitDetailCard(
         Box(
           modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFFF1F5F9))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(horizontal = 7.dp, vertical = 3.dp)
         ) {
           Text(
             text = habit.type.titleArabic,
             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Medium),
-            color = TextSecondary
+            color = MaterialTheme.colorScheme.onSurfaceVariant
           )
         }
 
@@ -340,7 +341,7 @@ fun HabitDetailCard(
           Box(
             modifier = Modifier
               .clip(RoundedCornerShape(8.dp))
-              .background(Color(0xFFFEF3C7))
+              .background(if (isDark) Color(0xFF382A13) else Color(0xFFFEF3C7))
               .padding(horizontal = 7.dp, vertical = 3.dp)
           ) {
             Text(
@@ -349,14 +350,14 @@ fun HabitDetailCard(
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold
               ),
-              color = Color(0xFFB45309)
+              color = if (isDark) Color(0xFFFBBF24) else Color(0xFFB45309)
             )
           }
         } else if (habit.isMandatory) {
           Box(
             modifier = Modifier
               .clip(RoundedCornerShape(8.dp))
-              .background(HabitEmeraldBg)
+              .background(if (isDark) HabitEmerald.copy(alpha = 0.2f) else HabitEmeraldBg)
               .padding(horizontal = 7.dp, vertical = 3.dp)
           ) {
             Text(
@@ -372,7 +373,7 @@ fun HabitDetailCard(
           Box(
             modifier = Modifier
               .clip(RoundedCornerShape(8.dp))
-              .background(Color(0xFFFEF3C7))
+              .background(if (isDark) Color(0xFF382A13) else Color(0xFFFEF3C7))
               .padding(horizontal = 7.dp, vertical = 3.dp)
           ) {
             Text(
@@ -381,17 +382,17 @@ fun HabitDetailCard(
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold
               ),
-              color = Color(0xFFD97706)
+              color = if (isDark) Color(0xFFFBBF24) else Color(0xFFD97706)
             )
           }
         }
 
         // Priority badge
         val (pText, pColor, pBg) = when (habit.priority) {
-          Priority.HIGH -> Triple("أولوية عالية", PriorityHigh, Color(0xFFFEF2F2))
-          Priority.MEDIUM -> Triple("أولوية متوسطة", Color(0xFFD97706), Color(0xFFFFFBEB))
-          Priority.LOW -> Triple("أولوية منخفضة", PriorityLow, Color(0xFFF1F5F9))
-          Priority.NONE -> Triple("عادية", TextSecondary, Color(0xFFF8FAFC))
+          Priority.HIGH -> Triple("أولوية عالية", PriorityHigh, if (isDark) Color(0xFF3B1A1A) else Color(0xFFFEF2F2))
+          Priority.MEDIUM -> Triple("أولوية متوسطة", Color(0xFFF59E0B), if (isDark) Color(0xFF382A13) else Color(0xFFFFFBEB))
+          Priority.LOW -> Triple("أولوية منخفضة", PriorityLow, if (isDark) Color(0xFF1E2838) else Color(0xFFF1F5F9))
+          Priority.NONE -> Triple("عادية", MaterialTheme.colorScheme.onSurfaceVariant, if (isDark) Color(0xFF19202E) else Color(0xFFF8FAFC))
         }
 
         Box(
@@ -507,7 +508,13 @@ fun HabitDetailCard(
               Box(
                 modifier = Modifier
                   .clip(RoundedCornerShape(12.dp))
-                  .background(if (isCompleted) HabitEmeraldBg else Color(0xFFEFF6FF))
+                  .background(
+                    if (isCompleted) {
+                      if (isDark) HabitEmerald.copy(alpha = 0.25f) else HabitEmeraldBg
+                    } else {
+                      MaterialTheme.colorScheme.primaryContainer
+                    }
+                  )
                   .border(
                     width = 1.dp,
                     color = if (isCompleted) HabitEmerald.copy(alpha = 0.5f) else BrightBlue.copy(alpha = 0.3f),
@@ -542,7 +549,13 @@ fun HabitDetailCard(
               Box(
                 modifier = Modifier
                   .clip(RoundedCornerShape(12.dp))
-                  .background(if (isCompleted) HabitEmeraldBg else Color(0xFFEFF6FF))
+                  .background(
+                    if (isCompleted) {
+                      if (isDark) HabitEmerald.copy(alpha = 0.25f) else HabitEmeraldBg
+                    } else {
+                      MaterialTheme.colorScheme.primaryContainer
+                    }
+                  )
                   .border(
                     width = 1.dp,
                     color = if (isCompleted) HabitEmerald.copy(alpha = 0.5f) else BrightBlue.copy(alpha = 0.3f),
@@ -581,7 +594,7 @@ fun HabitDetailCard(
                   .background(if (isCompleted) HabitEmerald else Color.Transparent)
                   .border(
                     1.5.dp,
-                    if (isCompleted) HabitEmerald else BorderLight,
+                    if (isCompleted) HabitEmerald else MaterialTheme.colorScheme.outline,
                     CircleShape
                   )
                   .clickable(onClick = onToggleBoolean),

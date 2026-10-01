@@ -116,6 +116,7 @@ fun SearchScreen(
 
   val searchResults = uiState.searchResults
   val query = uiState.globalSearchQuery
+  val isArabic = uiState.appSettings.language == com.example.model.AppLanguage.ARABIC
 
   Scaffold(
     topBar = {
@@ -137,7 +138,7 @@ fun SearchScreen(
           ) {
             Icon(
               imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-              contentDescription = "الرجوع",
+              contentDescription = if (isArabic) "الرجوع" else "Back",
               tint = TextPrimary
             )
           }
@@ -149,7 +150,7 @@ fun SearchScreen(
             onValueChange = onQueryChanged,
             placeholder = {
               Text(
-                text = "ابحث في كل شيء (مهام، عادات، أهداف، أفكار)...",
+                text = if (isArabic) "ابحث في كل شيء (مهام، عادات، أهداف، أفكار)..." else "Search everything (tasks, habits, goals, ideas)...",
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
                 color = TextMuted,
                 maxLines = 1,
@@ -159,7 +160,7 @@ fun SearchScreen(
             leadingIcon = {
               Icon(
                 imageVector = Icons.Outlined.Search,
-                contentDescription = "بحث",
+                contentDescription = if (isArabic) "بحث" else "Search",
                 tint = BrightBlue,
                 modifier = Modifier.size(20.dp)
               )
@@ -169,7 +170,7 @@ fun SearchScreen(
                 IconButton(onClick = onClearQuery) {
                   Icon(
                     imageVector = Icons.Default.Close,
-                    contentDescription = "مسح",
+                    contentDescription = if (isArabic) "مسح" else "Clear",
                     tint = TextSecondary,
                     modifier = Modifier.size(18.dp)
                   )
@@ -181,8 +182,8 @@ fun SearchScreen(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { onExecuteSearch(query) }),
             colors = OutlinedTextFieldDefaults.colors(
-              focusedContainerColor = Color(0xFFF8FAFC),
-              unfocusedContainerColor = Color(0xFFF8FAFC),
+              focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+              unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
               focusedBorderColor = BrightBlue,
               unfocusedBorderColor = BorderLight
             ),
@@ -210,7 +211,7 @@ fun SearchScreen(
               onClick = { onCategorySelected(cat) },
               label = {
                 Text(
-                  text = "${cat.iconEmoji} ${cat.titleArabic}",
+                  text = "${cat.iconEmoji} ${if (isArabic) cat.titleArabic else cat.titleEnglish}",
                   style = MaterialTheme.typography.labelMedium.copy(
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                   )

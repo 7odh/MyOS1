@@ -37,10 +37,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.theme.BorderLight
-import com.example.ui.theme.SurfaceCard
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
+import com.example.model.AppLanguage
+import com.example.model.AppStrings
 
 @Composable
 fun CircularProgressIndicatorCard(
@@ -53,15 +51,20 @@ fun CircularProgressIndicatorCard(
   accentColor: Color,
   accentBgColor: Color,
   trackColor: Color,
+  language: AppLanguage = AppLanguage.ARABIC,
   modifier: Modifier = Modifier
 ) {
+  val isDark = MaterialTheme.colorScheme.background.red < 0.2f
+  val safeAccentBg = if (isDark) accentColor.copy(alpha = 0.18f) else accentBgColor
+  val safeTrackColor = if (isDark) accentColor.copy(alpha = 0.15f) else trackColor
+
   Card(
     modifier = modifier
       .clip(RoundedCornerShape(20.dp))
-      .border(1.dp, BorderLight.copy(alpha = 0.7f), RoundedCornerShape(20.dp)),
+      .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp)),
     shape = RoundedCornerShape(20.dp),
-    colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-    elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
+    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
   ) {
     Column(
       modifier = Modifier
@@ -75,7 +78,7 @@ fun CircularProgressIndicatorCard(
         modifier = Modifier
           .size(32.dp)
           .clip(CircleShape)
-          .background(accentBgColor),
+          .background(safeAccentBg),
         contentAlignment = Alignment.Center
       ) {
         Icon(
@@ -104,7 +107,7 @@ fun CircularProgressIndicatorCard(
       CircularProgressRing(
         percentage = percentage,
         strokeColor = accentColor,
-        trackColor = trackColor,
+        trackColor = safeTrackColor,
         ringSize = 64.dp,
         strokeWidth = 6.dp
       )
@@ -122,15 +125,15 @@ fun CircularProgressIndicatorCard(
             fontWeight = FontWeight.Bold,
             fontSize = 13.sp
           ),
-          color = TextPrimary
+          color = MaterialTheme.colorScheme.onSurface
         )
       }
       Text(
-        text = "مكتملة",
+        text = AppStrings.completed(language),
         style = MaterialTheme.typography.bodySmall.copy(
           fontSize = 10.sp
         ),
-        color = TextSecondary
+        color = MaterialTheme.colorScheme.onSurfaceVariant
       )
 
       Spacer(modifier = Modifier.height(8.dp))
@@ -142,11 +145,11 @@ fun CircularProgressIndicatorCard(
         verticalAlignment = Alignment.CenterVertically
       ) {
         Text(
-          text = "متبقية ",
+          text = "${AppStrings.remaining(language)} ",
           style = MaterialTheme.typography.bodySmall.copy(
             fontSize = 11.sp
           ),
-          color = TextSecondary
+          color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
           text = "$remainingCount",
@@ -154,7 +157,7 @@ fun CircularProgressIndicatorCard(
             fontWeight = FontWeight.Bold,
             fontSize = 11.sp
           ),
-          color = TextPrimary
+          color = MaterialTheme.colorScheme.onSurface
         )
       }
     }
@@ -217,7 +220,7 @@ fun CircularProgressRing(
         fontWeight = FontWeight.Bold,
         fontSize = 13.sp
       ),
-      color = TextPrimary
+      color = MaterialTheme.colorScheme.onSurface
     )
   }
 }

@@ -20,15 +20,16 @@ import com.example.ui.theme.IndigoPrimary
 
 enum class QuickAddType(
   val titleArabic: String,
+  val titleEnglish: String,
   val icon: ImageVector,
   val accentColor: Color
 ) {
-  TASK("إضافة مهمة", Icons.Outlined.CheckBox, BrightBlue),
-  HABIT("إضافة عادة", Icons.Outlined.Spa, HabitEmerald),
-  GOAL("إضافة هدف", Icons.Outlined.TrackChanges, IndigoPrimary),
-  NOTE("إضافة ملاحظة", Icons.Outlined.Description, Color(0xFFF59E0B)),
-  PROJECT("إضافة مشروع", Icons.Outlined.FolderSpecial, ElectricViolet),
-  LIST("إضافة قائمة", Icons.AutoMirrored.Outlined.List, ElectricCyan),
-  EVENT("إضافة حدث", Icons.Outlined.CalendarMonth, DeepBlue),
-  FILE("إضافة ملف", Icons.AutoMirrored.Outlined.InsertDriveFile, Color(0xFF64748B))
+  TASK("إضافة مهمة", "Add Task", Icons.Outlined.CheckBox, BrightBlue),
+  HABIT("إضافة عادة", "Add Habit", Icons.Outlined.Spa, HabitEmerald),
+  GOAL("إضافة هدف", "Add Goal", Icons.Outlined.TrackChanges, IndigoPrimary),
+  NOTE("إضافة ملاحظة", "Add Note", Icons.Outlined.Description, Color(0xFFF59E0B)),
+  PROJECT("إضافة مشروع", "Add Project", Icons.Outlined.FolderSpecial, ElectricViolet),
+  LIST("إضافة قائمة", "Add List", Icons.AutoMirrored.Outlined.List, ElectricCyan),
+  EVENT("إضافة حدث", "Add Event", Icons.Outlined.CalendarMonth, DeepBlue),
+  FILE("إضافة ملف", "Add File", Icons.AutoMirrored.Outlined.InsertDriveFile, Color(0xFF64748B))
 }

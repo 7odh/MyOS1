@@ -21,33 +21,61 @@ import com.example.model.buildAnalyticsReport
 import com.example.model.getTodayDateString
 import com.example.model.performGlobalSearch
 
-enum class GoalFilter(val titleArabic: String) {
-  ALL("الكل"),
-  ACTIVE("النشطة"),
-  PAUSED("المتوقفة مؤقتاً"),
-  COMPLETED("المكتملة")
+enum class GoalFilter(val titleArabic: String, val titleEnglish: String) {
+  ALL("الكل", "All"),
+  ACTIVE("النشطة", "Active"),
+  PAUSED("المتوقفة مؤقتاً", "Paused"),
+  COMPLETED("المكتملة", "Completed");
+
+  constructor(titleArabic: String) : this(titleArabic, titleArabic)
+
+  fun getTitle(lang: com.example.model.AppLanguage): String = when (lang) {
+    com.example.model.AppLanguage.ARABIC -> titleArabic
+    com.example.model.AppLanguage.ENGLISH -> titleEnglish
+  }
 }
 
-enum class HabitFilter(val titleArabic: String) {
-  TODAY("اليوم"),
-  ALL("الكل"),
-  MANDATORY("إجبارية 🛡️"),
-  SCHEDULED("دورية 📅"),
-  PAUSED("مركونة ⏸️")
+enum class HabitFilter(val titleArabic: String, val titleEnglish: String) {
+  TODAY("اليوم", "Today"),
+  ALL("الكل", "All"),
+  MANDATORY("إجبارية 🛡️", "Mandatory 🛡️"),
+  SCHEDULED("دورية 📅", "Scheduled 📅"),
+  PAUSED("مركونة ⏸️", "Paused ⏸️");
+
+  constructor(titleArabic: String) : this(titleArabic, titleArabic)
+
+  fun getTitle(lang: com.example.model.AppLanguage): String = when (lang) {
+    com.example.model.AppLanguage.ARABIC -> titleArabic
+    com.example.model.AppLanguage.ENGLISH -> titleEnglish
+  }
 }
 
-enum class TaskFilter(val titleArabic: String) {
-  ALL("الكل"),
-  TODAY("اليوم ⚡"),
-  UPCOMING("قريباً / غداً 📅"),
-  NO_DATE("بدون موعد 📭"),
-  COMPLETED("المكتملة ✅")
+enum class TaskFilter(val titleArabic: String, val titleEnglish: String) {
+  ALL("الكل", "All"),
+  TODAY("اليوم ⚡", "Today ⚡"),
+  UPCOMING("قريباً / غداً 📅", "Upcoming 📅"),
+  NO_DATE("بدون موعد 📭", "No Date 📭"),
+  COMPLETED("المكتملة ✅", "Completed ✅");
+
+  constructor(titleArabic: String) : this(titleArabic, titleArabic)
+
+  fun getTitle(lang: com.example.model.AppLanguage): String = when (lang) {
+    com.example.model.AppLanguage.ARABIC -> titleArabic
+    com.example.model.AppLanguage.ENGLISH -> titleEnglish
+  }
 }
 
-enum class TaskSortOrder(val titleArabic: String) {
-  PRIORITY("حسب الأولوية"),
-  NEWEST("الأحدث أولاً"),
-  OLDEST("الأقدم أولاً")
+enum class TaskSortOrder(val titleArabic: String, val titleEnglish: String) {
+  PRIORITY("حسب الأولوية", "By Priority"),
+  NEWEST("الأحدث أولاً", "Newest First"),
+  OLDEST("الأقدم أولاً", "Oldest First");
+
+  constructor(titleArabic: String) : this(titleArabic, titleArabic)
+
+  fun getTitle(lang: com.example.model.AppLanguage): String = when (lang) {
+    com.example.model.AppLanguage.ARABIC -> titleArabic
+    com.example.model.AppLanguage.ENGLISH -> titleEnglish
+  }
 }
 
 data class MyOSUiState(

@@ -130,18 +130,22 @@ fun TasksScreen(
     }
   }
 
+  val lang = uiState.appSettings.language
+  val isArabic = lang == com.example.model.AppLanguage.ARABIC
+
   ModalNavigationDrawer(
     drawerState = drawerState,
     drawerContent = {
       ModalDrawerSheet(
-        drawerContainerColor = SurfaceWhite
+        drawerContainerColor = MaterialTheme.colorScheme.surface
       ) {
         NavigationDrawerContent(
           currentScreen = uiState.currentScreen,
           onScreenSelected = onScreenSelected,
           onCloseDrawer = {
             scope.launch { drawerState.close() }
-          }
+          },
+          language = lang
         )
       }
     }
@@ -156,13 +160,16 @@ fun TasksScreen(
           onRestModeToggle = onToggleRestMode,
           onSearchClick = {
             onScreenSelected(ScreenDestination.SEARCH)
-          }
+          },
+          language = lang
         )
       },
       bottomBar = {
         MyOSBottomNavigationBar(
           currentScreen = uiState.currentScreen,
           onTabSelected = onScreenSelected,
+          destinations = uiState.appSettings.bottomNavTabs,
+          language = lang,
           onMoreClick = {
             scope.launch { drawerState.open() }
           }
@@ -190,14 +197,14 @@ fun TasksScreen(
         ) {
           Icon(
             imageVector = Icons.Default.Add,
-            contentDescription = "إضافة مهمة جديدة",
+            contentDescription = if (isArabic) "إضافة مهمة جديدة" else "Add New Task",
             tint = TextWhite,
             modifier = Modifier.size(28.dp)
           )
         }
       },
       snackbarHost = { SnackbarHost(snackbarHostState) },
-      containerColor = BackgroundLight,
+      containerColor = MaterialTheme.colorScheme.background,
       modifier = modifier
     ) { innerPadding ->
       Box(
@@ -219,10 +226,10 @@ fun TasksScreen(
             modifier = Modifier
               .fillMaxWidth()
               .clip(RoundedCornerShape(22.dp))
-              .border(1.dp, BorderLight.copy(alpha = 0.8f), RoundedCornerShape(22.dp)),
+              .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(22.dp)),
             shape = RoundedCornerShape(22.dp),
-            colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
           ) {
             Column(
               modifier = Modifier
@@ -239,12 +246,12 @@ fun TasksScreen(
                     modifier = Modifier
                       .size(38.dp)
                       .clip(CircleShape)
-                      .background(TaskVioletBg),
+                      .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                   ) {
                     Icon(
                       imageVector = Icons.Outlined.CheckBox,
-                      contentDescription = "المهام",
+                      contentDescription = com.example.model.AppStrings.tasks(lang),
                       tint = TaskViolet,
                       modifier = Modifier.size(22.dp)
                     )
@@ -252,17 +259,17 @@ fun TasksScreen(
                   Spacer(modifier = Modifier.width(10.dp))
                   Column {
                     Text(
-                      text = "المهام وقائمة الإنجاز",
+                      text = if (isArabic) "المهام وقائمة الإنجاز" else "Tasks & To-Do List",
                       style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
                       ),
-                      color = TextPrimary
+                      color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                      text = "إدارة وتنظيم المهام اليومية والمؤجلة",
+                      text = if (isArabic) "إدارة وتنظيم المهام اليومية والمؤجلة" else "Manage and organize your agenda",
                       style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                      color = TextSecondary
+                      color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                   }
                 }
@@ -280,7 +287,7 @@ fun TasksScreen(
                     modifier = Modifier.size(16.dp)
                   )
                   Spacer(modifier = Modifier.width(4.dp))
-                  Text(text = "مهمة جديدة", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                  Text(text = if (isArabic) "مهمة جديدة" else "New Task", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
               }
 
@@ -299,7 +306,7 @@ fun TasksScreen(
               ) {
                 TaskMetricBox(
                   icon = Icons.Outlined.Today,
-                  title = "مهام اليوم ⚡",
+                  title = if (isArabic) "مهام اليوم ⚡" else "Today ⚡",
                   value = "$todayCount",
                   accentColor = TaskViolet,
                   modifier = Modifier.weight(1f)
@@ -307,7 +314,7 @@ fun TasksScreen(
 
                 TaskMetricBox(
                   icon = Icons.Outlined.Inbox,
-                  title = "بدون موعد 📭",
+                  title = if (isArabic) "بدون موعد 📭" else "No Date 📭",
                   value = "$noDateCount",
                   accentColor = BrightBlue,
                   modifier = Modifier.weight(1f)
@@ -315,7 +322,7 @@ fun TasksScreen(
 
                 TaskMetricBox(
                   icon = Icons.Outlined.CheckCircle,
-                  title = "المكتملة ✅",
+                  title = if (isArabic) "المكتملة ✅" else "Done ✅",
                   value = "$completedCount / $totalCount",
                   accentColor = HabitEmerald,
                   modifier = Modifier.weight(1f)
@@ -338,10 +345,10 @@ fun TasksScreen(
               Box(
                 modifier = Modifier
                   .clip(RoundedCornerShape(12.dp))
-                  .background(if (isSelected) TaskViolet else Color(0xFFF1F5F9))
+                  .background(if (isSelected) TaskViolet else MaterialTheme.colorScheme.surface)
                   .border(
                     width = 1.dp,
-                    color = if (isSelected) TaskViolet else BorderLight,
+                    color = if (isSelected) TaskViolet else MaterialTheme.colorScheme.outlineVariant,
                     shape = RoundedCornerShape(12.dp)
                   )
                   .clickable { onSetTaskFilter(filter) }
@@ -349,12 +356,12 @@ fun TasksScreen(
                 contentAlignment = Alignment.Center
               ) {
                 Text(
-                  text = filter.titleArabic,
+                  text = filter.getTitle(lang),
                   style = MaterialTheme.typography.bodySmall.copy(
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                     fontSize = 12.sp
                   ),
-                  color = if (isSelected) TextWhite else TextSecondary
+                  color = if (isSelected) TextWhite else MaterialTheme.colorScheme.onSurfaceVariant
                 )
               }
             }
@@ -572,8 +579,8 @@ private fun TaskMetricBox(
   Box(
     modifier = modifier
       .clip(RoundedCornerShape(14.dp))
-      .background(Color(0xFFF8FAFC))
-      .border(1.dp, BorderLight.copy(alpha = 0.6f), RoundedCornerShape(14.dp))
+      .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+      .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp))
       .padding(10.dp)
   ) {
     Column(
@@ -593,13 +600,13 @@ private fun TaskMetricBox(
           fontWeight = FontWeight.Bold,
           fontSize = 14.sp
         ),
-        color = TextPrimary
+        color = MaterialTheme.colorScheme.onSurface
       )
       Spacer(modifier = Modifier.height(2.dp))
       Text(
         text = title,
         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-        color = TextSecondary
+        color = MaterialTheme.colorScheme.onSurfaceVariant
       )
     }
   }

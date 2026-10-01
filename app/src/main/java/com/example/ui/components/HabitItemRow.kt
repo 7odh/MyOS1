@@ -15,15 +15,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,18 +31,12 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.model.AppLanguage
 import com.example.model.Habit
 import com.example.model.HabitType
-import com.example.ui.theme.BorderLight
 import com.example.ui.theme.BrightBlue
 import com.example.ui.theme.HabitEmerald
 import com.example.ui.theme.HabitEmeraldBg
-import com.example.ui.theme.HabitEmeraldTrack
-import com.example.ui.theme.SurfaceCard
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
-import com.example.ui.theme.TextWhite
 
 @Composable
 fun HabitItemRow(
@@ -56,16 +44,30 @@ fun HabitItemRow(
   onIncrementCounter: () -> Unit,
   onOpenLogDialog: () -> Unit,
   onToggleBoolean: () -> Unit,
+  language: AppLanguage = AppLanguage.ARABIC,
   modifier: Modifier = Modifier
 ) {
   val isCompleted = habit.isCompleted
   val isExceeded = habit.currentValue > habit.targetValue
+  val isDark = MaterialTheme.colorScheme.background.red < 0.2f
 
   val rowBorderColor by animateColorAsState(
-    targetValue = if (isCompleted) HabitEmerald.copy(alpha = 0.4f) else BorderLight.copy(alpha = 0.6f),
+    targetValue = if (isCompleted) HabitEmerald.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant,
     animationSpec = tween(durationMillis = 200),
     label = "rowBorder"
   )
+
+  val cardContainerColor = if (isCompleted) {
+    if (isDark) Color(0xFF132A22) else Color(0xFFF9FDFB)
+  } else {
+    MaterialTheme.colorScheme.surface
+  }
+
+  val iconBadgeBg = if (isCompleted) {
+    if (isDark) HabitEmerald.copy(alpha = 0.2f) else HabitEmeraldBg
+  } else {
+    MaterialTheme.colorScheme.surfaceVariant
+  }
 
   Card(
     modifier = modifier
@@ -80,10 +82,8 @@ fun HabitItemRow(
         }
       },
     shape = RoundedCornerShape(14.dp),
-    colors = CardDefaults.cardColors(
-      containerColor = if (isCompleted) Color(0xFFF9FDFB) else SurfaceCard
-    ),
-    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    colors = CardDefaults.cardColors(containerColor = cardContainerColor),
+    elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
   ) {
     Row(
       modifier = Modifier
@@ -91,12 +91,12 @@ fun HabitItemRow(
         .padding(horizontal = 12.dp, vertical = 10.dp),
       verticalAlignment = Alignment.CenterVertically
     ) {
-      // 1. Right side (RTL start): Habit Icon in soft rounded badge
+      // 1. Habit Icon in soft rounded badge
       Box(
         modifier = Modifier
           .size(36.dp)
           .clip(RoundedCornerShape(10.dp))
-          .background(if (isCompleted) HabitEmeraldBg else Color(0xFFF1F5F9)),
+          .background(iconBadgeBg),
         contentAlignment = Alignment.Center
       ) {
         Text(
@@ -120,12 +120,16 @@ fun HabitItemRow(
               fontWeight = if (isCompleted) FontWeight.SemiBold else FontWeight.Medium,
               fontSize = 14.sp
             ),
-            color = TextPrimary
+            color = MaterialTheme.colorScheme.onSurface
           )
 
           // Current vs Target text badge
           val progressLabel = when (habit.type) {
-            HabitType.BOOLEAN -> if (isCompleted) "مكتملة ✓" else "لم تكتمل"
+            HabitType.BOOLEAN -> if (isCompleted) {
+              if (language == AppLanguage.ARABIC) "مكتملة ✓" else "Done ✓"
+            } else {
+              if (language == AppLanguage.ARABIC) "لم تكتمل" else "Pending"
+            }
             else -> "${habit.currentValue} / ${habit.targetValue} ${habit.unit}"
           }
 
@@ -136,9 +140,8 @@ fun HabitItemRow(
               fontSize = 11.sp
             ),
             color = when {
-              isExceeded -> HabitEmerald
-              isCompleted -> HabitEmerald
-              else -> TextSecondary
+              isExceeded || isCompleted -> HabitEmerald
+              else -> MaterialTheme.colorScheme.onSurfaceVariant
             }
           )
         }
@@ -156,7 +159,11 @@ fun HabitItemRow(
               .height(4.dp)
               .clip(RoundedCornerShape(2.dp)),
             color = if (isCompleted) HabitEmerald else BrightBlue,
-            trackColor = if (isCompleted) HabitEmeraldTrack else Color(0xFFE2E8F0),
+            trackColor = if (isCompleted) {
+              if (isDark) HabitEmerald.copy(alpha = 0.2f) else Color(0xFFD1FAE5)
+            } else {
+              MaterialTheme.colorScheme.surfaceVariant
+            },
             strokeCap = StrokeCap.Round
           )
         }
@@ -164,101 +171,86 @@ fun HabitItemRow(
 
       Spacer(modifier = Modifier.width(10.dp))
 
-      // 3. Left side (RTL end): Interactive Action (Counter button, Log button, or Checkbox)
+      // 3. Action button (Counter button, Log button, or Checkbox)
       when (habit.type) {
         HabitType.COUNTER -> {
-          // Increment pill button (e.g. +1 cup or +1 prayer)
           Box(
             modifier = Modifier
               .clip(RoundedCornerShape(10.dp))
-              .background(if (isCompleted) HabitEmeraldBg else Color(0xFFEFF6FF))
+              .background(
+                if (isCompleted) {
+                  if (isDark) HabitEmerald.copy(alpha = 0.25f) else HabitEmeraldBg
+                } else {
+                  MaterialTheme.colorScheme.primaryContainer
+                }
+              )
               .border(
                 width = 1.dp,
                 color = if (isCompleted) HabitEmerald.copy(alpha = 0.5f) else BrightBlue.copy(alpha = 0.3f),
                 shape = RoundedCornerShape(10.dp)
               )
               .clickable(onClick = onIncrementCounter)
-              .padding(horizontal = 8.dp, vertical = 6.dp),
+              .padding(horizontal = 10.dp, vertical = 6.dp),
             contentAlignment = Alignment.Center
           ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-              if (isCompleted) {
-                Icon(
-                  imageVector = Icons.Default.Check,
-                  contentDescription = null,
-                  tint = HabitEmerald,
-                  modifier = Modifier.size(13.dp)
-                )
-                Spacer(modifier = Modifier.width(3.dp))
-              }
-              Text(
-                text = "+1",
-                style = MaterialTheme.typography.labelMedium.copy(
-                  fontWeight = FontWeight.Bold,
-                  fontSize = 12.sp
-                ),
-                color = if (isCompleted) HabitEmerald else BrightBlue
-              )
-            }
+            Text(
+              text = "+1",
+              style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp
+              ),
+              color = if (isCompleted) HabitEmerald else BrightBlue
+            )
           }
         }
         HabitType.QUANTITY, HabitType.DURATION -> {
-          // Quick Log button ("تسجيل" with edit icon)
           Box(
             modifier = Modifier
               .clip(RoundedCornerShape(10.dp))
-              .background(if (isCompleted) HabitEmeraldBg else Color(0xFFEFF6FF))
+              .background(MaterialTheme.colorScheme.surfaceVariant)
               .border(
                 width = 1.dp,
-                color = if (isCompleted) HabitEmerald.copy(alpha = 0.4f) else BrightBlue.copy(alpha = 0.3f),
+                color = MaterialTheme.colorScheme.outlineVariant,
                 shape = RoundedCornerShape(10.dp)
               )
               .clickable(onClick = onOpenLogDialog)
               .padding(horizontal = 8.dp, vertical = 6.dp),
             contentAlignment = Alignment.Center
           ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-              if (isCompleted) {
-                Icon(
-                  imageVector = Icons.Default.Check,
-                  contentDescription = null,
-                  tint = HabitEmerald,
-                  modifier = Modifier.size(13.dp)
-                )
-                Spacer(modifier = Modifier.width(3.dp))
-              }
-              Text(
-                text = if (habit.type == HabitType.DURATION) "تسجيل وقت" else "تسجيل إنجاز",
-                style = MaterialTheme.typography.labelSmall.copy(
-                  fontWeight = FontWeight.Bold,
-                  fontSize = 10.sp
-                ),
-                color = if (isCompleted) HabitEmerald else BrightBlue
-              )
-            }
+            Text(
+              text = if (language == AppLanguage.ARABIC) "تسجيل" else "Log",
+              style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 11.sp
+              ),
+              color = MaterialTheme.colorScheme.onSurface
+            )
           }
         }
         HabitType.BOOLEAN -> {
-          // Single-tap custom check circle
           Box(
             modifier = Modifier
-              .size(24.dp)
-              .clip(CircleShape)
-              .background(if (isCompleted) HabitEmerald else Color.Transparent)
+              .size(28.dp)
+              .clip(RoundedCornerShape(8.dp))
+              .background(
+                if (isCompleted) HabitEmerald else Color.Transparent
+              )
               .border(
-                1.5.dp,
-                if (isCompleted) HabitEmerald else BorderLight,
-                CircleShape
+                width = 1.5.dp,
+                color = if (isCompleted) HabitEmerald else MaterialTheme.colorScheme.outline,
+                shape = RoundedCornerShape(8.dp)
               )
               .clickable(onClick = onToggleBoolean),
             contentAlignment = Alignment.Center
           ) {
             if (isCompleted) {
-              Icon(
-                imageVector = Icons.Default.Check,
-                contentDescription = "مكتملة",
-                tint = TextWhite,
-                modifier = Modifier.size(15.dp)
+              Text(
+                text = "✓",
+                style = MaterialTheme.typography.labelMedium.copy(
+                  fontWeight = FontWeight.Bold,
+                  fontSize = 14.sp
+                ),
+                color = Color.White
               )
             }
           }

@@ -300,7 +300,8 @@ fun MyOSApp(viewModel: MyOSViewModel) {
       else -> {
         PlaceholderScreen(
           destination = uiState.currentScreen,
-          onNavigateBack = { viewModel.onScreenSelected(ScreenDestination.HOME) }
+          onNavigateBack = { viewModel.onScreenSelected(ScreenDestination.HOME) },
+          language = uiState.appSettings.language
         )
       }
     }

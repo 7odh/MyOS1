@@ -13,9 +13,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,20 +38,17 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.model.AppLanguage
+import com.example.model.AppStrings
 import com.example.model.ScreenDestination
-import com.example.ui.theme.BorderLight
 import com.example.ui.theme.BrightBlue
-import com.example.ui.theme.GoalBlueBg
-import com.example.ui.theme.SurfaceWhite
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
 
 @Composable
 fun NavigationDrawerContent(
   currentScreen: ScreenDestination,
   onScreenSelected: (ScreenDestination) -> Unit,
   onCloseDrawer: () -> Unit,
+  language: AppLanguage = AppLanguage.ARABIC,
   modifier: Modifier = Modifier
 ) {
   Column(
@@ -86,7 +83,7 @@ fun NavigationDrawerContent(
             color = MaterialTheme.colorScheme.onSurface
           )
           Text(
-            text = "عقلك الثاني",
+            text = AppStrings.appSubtitle(language),
             style = MaterialTheme.typography.bodySmall.copy(
               fontSize = 10.sp
             ),
@@ -101,7 +98,7 @@ fun NavigationDrawerContent(
       ) {
         Icon(
           imageVector = Icons.Default.Close,
-          contentDescription = "إغلاق القائمة",
+          contentDescription = AppStrings.closeMenu(language),
           tint = MaterialTheme.colorScheme.onSurfaceVariant,
           modifier = Modifier.size(20.dp)
         )
@@ -114,7 +111,7 @@ fun NavigationDrawerContent(
         .weight(1f)
         .verticalScroll(rememberScrollState())
     ) {
-      // Main destinations (Cleaned: removed inactive Projects and Knowledge; Search is now in top bar)
+      // Main destinations
       val mainItems = listOf(
         ScreenDestination.HOME,
         ScreenDestination.GOALS,
@@ -129,7 +126,7 @@ fun NavigationDrawerContent(
 
       mainItems.forEach { destination ->
         DrawerMenuItem(
-          title = destination.titleArabic,
+          title = AppStrings.getDestinationTitle(destination, language),
           icon = destination.icon,
           isSelected = currentScreen == destination,
           onClick = {
@@ -140,7 +137,7 @@ fun NavigationDrawerContent(
       }
 
       Spacer(modifier = Modifier.height(10.dp))
-      HorizontalDivider(color = BorderLight.copy(alpha = 0.6f), thickness = 1.dp)
+      HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
       Spacer(modifier = Modifier.height(10.dp))
 
       // Bottom utility destinations
@@ -151,7 +148,7 @@ fun NavigationDrawerContent(
 
       bottomItems.forEach { destination ->
         DrawerMenuItem(
-          title = destination.titleArabic,
+          title = AppStrings.getDestinationTitle(destination, language),
           icon = destination.icon,
           isSelected = currentScreen == destination,
           onClick = {
@@ -164,7 +161,7 @@ fun NavigationDrawerContent(
       Spacer(modifier = Modifier.height(16.dp))
 
       // Bottom decorative motivational mountain card
-      BottomMountainCard()
+      BottomMountainCard(language = language)
     }
   }
 }
@@ -209,20 +206,27 @@ private fun DrawerMenuItem(
 }
 
 @Composable
-private fun BottomMountainCard(modifier: Modifier = Modifier) {
+private fun BottomMountainCard(
+  language: AppLanguage = AppLanguage.ARABIC,
+  modifier: Modifier = Modifier
+) {
+  val isDark = MaterialTheme.colorScheme.background.red < 0.2f
+  val gradientColors = if (isDark) {
+    listOf(Color(0xFF1E2638), Color(0xFF161E2E))
+  } else {
+    listOf(Color(0xFFF8FAFC), Color(0xFFEFF6FF))
+  }
+
+  val mountainColor1 = if (isDark) Color(0xFF293B5A).copy(alpha = 0.6f) else Color(0xFFDBEAFE).copy(alpha = 0.6f)
+  val mountainColor2 = if (isDark) Color(0xFF3B5680).copy(alpha = 0.6f) else Color(0xFF93C5FD).copy(alpha = 0.5f)
+  val flagpoleColor = if (isDark) Color(0xFF94A3B8) else Color(0xFF1E293B)
+
   Box(
     modifier = modifier
       .fillMaxWidth()
       .height(100.dp)
       .clip(RoundedCornerShape(16.dp))
-      .background(
-        brush = Brush.verticalGradient(
-          colors = listOf(
-            Color(0xFFF8FAFC),
-            Color(0xFFEFF6FF)
-          )
-        )
-      )
+      .background(brush = Brush.verticalGradient(colors = gradientColors))
   ) {
     Canvas(modifier = Modifier.fillMaxSize()) {
       val w = size.width
@@ -237,7 +241,7 @@ private fun BottomMountainCard(modifier: Modifier = Modifier) {
       }
       drawPath(
         path = path,
-        color = Color(0xFFDBEAFE).copy(alpha = 0.6f)
+        color = mountainColor1
       )
 
       val summitPath = Path().apply {
@@ -248,12 +252,12 @@ private fun BottomMountainCard(modifier: Modifier = Modifier) {
       }
       drawPath(
         path = summitPath,
-        color = Color(0xFF93C5FD).copy(alpha = 0.5f)
+        color = mountainColor2
       )
 
       // Flag on summit
       drawLine(
-        color = Color(0xFF1E293B),
+        color = flagpoleColor,
         start = Offset(w * 0.42f, h * 0.32f),
         end = Offset(w * 0.42f, h * 0.20f),
         strokeWidth = 1.5.dp.toPx()
@@ -275,13 +279,13 @@ private fun BottomMountainCard(modifier: Modifier = Modifier) {
       verticalArrangement = Arrangement.SpaceBetween
     ) {
       Text(
-        text = "\"رحلتك للأفضل\nتبدأ من هنا\"",
+        text = AppStrings.journeyQuote(language),
         style = MaterialTheme.typography.bodySmall.copy(
           fontSize = 11.sp,
           fontWeight = FontWeight.Medium,
           lineHeight = 15.sp
         ),
-        color = TextSecondary
+        color = MaterialTheme.colorScheme.onSurfaceVariant
       )
       Text(
         text = "MyOS",
@@ -289,7 +293,7 @@ private fun BottomMountainCard(modifier: Modifier = Modifier) {
           fontSize = 10.sp,
           fontWeight = FontWeight.Bold
         ),
-        color = TextMuted
+        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
       )
     }
   }

@@ -42,9 +42,12 @@ fun QuickAddBottomSheet(
   isVisible: Boolean,
   onDismiss: () -> Unit,
   onOptionSelected: (QuickAddType) -> Unit,
+  language: com.example.model.AppLanguage = com.example.model.AppLanguage.ARABIC,
   modifier: Modifier = Modifier,
   sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 ) {
+  val isArabic = language == com.example.model.AppLanguage.ARABIC
+
   if (isVisible) {
     ModalBottomSheet(
       onDismissRequest = onDismiss,
@@ -68,7 +71,7 @@ fun QuickAddBottomSheet(
           verticalAlignment = Alignment.CenterVertically
         ) {
           Text(
-            text = "إضافة سريعة",
+            text = if (isArabic) "إضافة سريعة" else "Quick Add",
             style = MaterialTheme.typography.titleMedium.copy(
               fontWeight = FontWeight.Bold,
               fontSize = 18.sp
@@ -82,7 +85,7 @@ fun QuickAddBottomSheet(
           ) {
             Icon(
               imageVector = Icons.Default.Close,
-              contentDescription = "إغلاق",
+              contentDescription = if (isArabic) "إغلاق" else "Close",
               tint = TextSecondary,
               modifier = Modifier.size(20.dp)
             )
@@ -93,7 +96,8 @@ fun QuickAddBottomSheet(
         QuickAddType.entries.forEach { option ->
           QuickAddItemRow(
             option = option,
-            onClick = { onOptionSelected(option) }
+            onClick = { onOptionSelected(option) },
+            language = language
           )
         }
 
@@ -107,8 +111,12 @@ fun QuickAddBottomSheet(
 private fun QuickAddItemRow(
   option: QuickAddType,
   onClick: () -> Unit,
+  language: com.example.model.AppLanguage = com.example.model.AppLanguage.ARABIC,
   modifier: Modifier = Modifier
 ) {
+  val isArabic = language == com.example.model.AppLanguage.ARABIC
+  val title = if (isArabic) option.titleArabic else option.titleEnglish
+
   Row(
     modifier = modifier
       .fillMaxWidth()
@@ -127,7 +135,7 @@ private fun QuickAddItemRow(
     ) {
       Icon(
         imageVector = option.icon,
-        contentDescription = option.titleArabic,
+        contentDescription = title,
         tint = option.accentColor,
         modifier = Modifier.size(20.dp)
       )
@@ -136,7 +144,7 @@ private fun QuickAddItemRow(
     Spacer(modifier = Modifier.width(14.dp))
 
     Text(
-      text = option.titleArabic,
+      text = title,
       style = MaterialTheme.typography.bodyLarge.copy(
         fontWeight = FontWeight.SemiBold,
         fontSize = 15.sp

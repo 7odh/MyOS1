@@ -32,11 +32,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.model.AppLanguage
+import com.example.model.AppStrings
 import com.example.model.ScreenDestination
 import com.example.ui.theme.BackgroundLight
 import com.example.ui.theme.BrightBlue
 import com.example.ui.theme.GoalBlueBg
-import com.example.ui.theme.SurfaceWhite
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 
@@ -45,8 +46,12 @@ import com.example.ui.theme.TextSecondary
 fun PlaceholderScreen(
   destination: ScreenDestination,
   onNavigateBack: () -> Unit,
+  language: AppLanguage = AppLanguage.ARABIC,
   modifier: Modifier = Modifier
 ) {
+  val isArabic = language == AppLanguage.ARABIC
+  val title = AppStrings.getDestinationTitle(destination, language)
+
   BackHandler {
     onNavigateBack()
   }
@@ -56,7 +61,7 @@ fun PlaceholderScreen(
       TopAppBar(
         title = {
           Text(
-            text = destination.titleArabic,
+            text = title,
             style = MaterialTheme.typography.titleMedium.copy(
               fontWeight = FontWeight.Bold
             ),
@@ -67,12 +72,12 @@ fun PlaceholderScreen(
           IconButton(onClick = onNavigateBack) {
             Icon(
               imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-              contentDescription = "الرجوع",
+              contentDescription = if (isArabic) "الرجوع" else "Back",
               tint = TextPrimary
             )
           }
         },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = SurfaceWhite)
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
       )
     },
     containerColor = BackgroundLight,
@@ -95,7 +100,7 @@ fun PlaceholderScreen(
       ) {
         Icon(
           imageVector = destination.icon,
-          contentDescription = destination.titleArabic,
+          contentDescription = title,
           tint = BrightBlue,
           modifier = Modifier.size(40.dp)
         )
@@ -104,7 +109,7 @@ fun PlaceholderScreen(
       Spacer(modifier = Modifier.height(20.dp))
 
       Text(
-        text = "قسم ${destination.titleArabic}",
+        text = if (isArabic) "قسم $title" else "$title Section",
         style = MaterialTheme.typography.titleLarge.copy(
           fontWeight = FontWeight.Bold,
           fontSize = 20.sp
@@ -115,7 +120,11 @@ fun PlaceholderScreen(
       Spacer(modifier = Modifier.height(8.dp))
 
       Text(
-        text = "سيتم تفعيل هذا القسم بالكامل في المراحل القادمة ضمن نظام MyOS المتكامل.",
+        text = if (isArabic) {
+          "سيتم تفعيل هذا القسم بالكامل في المراحل القادمة ضمن نظام MyOS المتكامل."
+        } else {
+          "This section will be fully enabled in upcoming releases of MyOS."
+        },
         style = MaterialTheme.typography.bodyMedium,
         color = TextSecondary,
         textAlign = TextAlign.Center
@@ -128,7 +137,10 @@ fun PlaceholderScreen(
         colors = ButtonDefaults.buttonColors(containerColor = BrightBlue),
         shape = RoundedCornerShape(12.dp)
       ) {
-        Text("العودة إلى الرئيسية", fontWeight = FontWeight.Bold)
+        Text(
+          text = if (isArabic) "العودة إلى الرئيسية" else "Back to Home",
+          fontWeight = FontWeight.Bold
+        )
       }
     }
   }

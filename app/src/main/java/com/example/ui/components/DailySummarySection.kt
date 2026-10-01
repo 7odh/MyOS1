@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BarChart
-import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CheckBox
 import androidx.compose.material.icons.outlined.Spa
 import androidx.compose.material.icons.outlined.TrackChanges
@@ -29,6 +28,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.model.AppLanguage
+import com.example.model.AppStrings
 import com.example.model.DailyAnalytics
 import com.example.ui.theme.BrightBlue
 import com.example.ui.theme.GoalBlue
@@ -40,26 +41,14 @@ import com.example.ui.theme.HabitEmeraldTrack
 import com.example.ui.theme.TaskViolet
 import com.example.ui.theme.TaskVioletBg
 import com.example.ui.theme.TaskVioletTrack
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun DailySummarySection(
   analytics: DailyAnalytics,
   onNavigateToAnalytics: () -> Unit = {},
+  language: AppLanguage = AppLanguage.ARABIC,
   modifier: Modifier = Modifier
 ) {
-  // Format current Arabic date or match reference "السبت، 27 سبتمبر 2025"
-  val formattedDate = try {
-    val sdf = SimpleDateFormat("EEEE، d MMMM yyyy", Locale("ar"))
-    sdf.format(Date())
-  } catch (e: Exception) {
-    "السبت، 27 سبتمبر 2025"
-  }
-
   Column(
     modifier = modifier
       .fillMaxWidth()
@@ -81,18 +70,18 @@ fun DailySummarySection(
       ) {
         Icon(
           imageVector = Icons.Outlined.BarChart,
-          contentDescription = "ملخص يومك",
+          contentDescription = AppStrings.dailySummary(language),
           tint = BrightBlue,
           modifier = Modifier.size(22.dp)
         )
         Spacer(modifier = Modifier.width(6.dp))
         Text(
-          text = "ملخص يومك",
+          text = AppStrings.dailySummary(language),
           style = MaterialTheme.typography.titleMedium.copy(
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp
           ),
-          color = TextPrimary
+          color = MaterialTheme.colorScheme.onSurface
         )
       }
 
@@ -100,12 +89,12 @@ fun DailySummarySection(
       Box(
         modifier = Modifier
           .clip(RoundedCornerShape(12.dp))
-          .background(GoalBlueBg)
+          .background(MaterialTheme.colorScheme.primaryContainer)
           .clickable(onClick = onNavigateToAnalytics)
-          .padding(horizontal = 10.dp, vertical = 4.dp)
+          .padding(horizontal = 10.dp, vertical = 5.dp)
       ) {
         Text(
-          text = "التحليلات الشاملة 📊",
+          text = AppStrings.comprehensiveAnalytics(language),
           style = MaterialTheme.typography.labelSmall.copy(
             fontWeight = FontWeight.Bold,
             fontSize = 11.sp
@@ -130,7 +119,7 @@ fun DailySummarySection(
         // Goals Card (Blue)
         if (hasGoals) {
           CircularProgressIndicatorCard(
-            title = "الأهداف",
+            title = AppStrings.goals(language),
             icon = Icons.Outlined.TrackChanges,
             percentage = analytics.goalsPercentage,
             completedCount = analytics.goalsCompleted,
@@ -139,6 +128,7 @@ fun DailySummarySection(
             accentColor = GoalBlue,
             accentBgColor = GoalBlueBg,
             trackColor = GoalBlueTrack,
+            language = language,
             modifier = Modifier.weight(1f)
           )
         }
@@ -146,7 +136,7 @@ fun DailySummarySection(
         // Habits Card (Emerald)
         if (hasHabits) {
           CircularProgressIndicatorCard(
-            title = "العادات",
+            title = AppStrings.habits(language),
             icon = Icons.Outlined.Spa,
             percentage = analytics.habitsPercentage,
             completedCount = analytics.habitsCompleted,
@@ -155,6 +145,7 @@ fun DailySummarySection(
             accentColor = HabitEmerald,
             accentBgColor = HabitEmeraldBg,
             trackColor = HabitEmeraldTrack,
+            language = language,
             modifier = Modifier.weight(1f)
           )
         }
@@ -162,7 +153,7 @@ fun DailySummarySection(
         // Tasks Card (Purple/Violet)
         if (hasTasks) {
           CircularProgressIndicatorCard(
-            title = "المهام",
+            title = AppStrings.tasks(language),
             icon = Icons.Outlined.CheckBox,
             percentage = analytics.tasksPercentage,
             completedCount = analytics.tasksCompleted,
@@ -171,6 +162,7 @@ fun DailySummarySection(
             accentColor = TaskViolet,
             accentBgColor = TaskVioletBg,
             trackColor = TaskVioletTrack,
+            language = language,
             modifier = Modifier.weight(1f)
           )
         }

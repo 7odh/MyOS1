@@ -110,14 +110,18 @@ fun GoalsScreen(
     }
   }
 
+  val lang = uiState.appSettings.language
+  val isArabic = lang == com.example.model.AppLanguage.ARABIC
+
   ModalNavigationDrawer(
     drawerState = drawerState,
     drawerContent = {
-      ModalDrawerSheet(drawerContainerColor = SurfaceWhite) {
+      ModalDrawerSheet(drawerContainerColor = MaterialTheme.colorScheme.surface) {
         NavigationDrawerContent(
           currentScreen = ScreenDestination.GOALS,
           onScreenSelected = onScreenSelected,
-          onCloseDrawer = { scope.launch { drawerState.close() } }
+          onCloseDrawer = { scope.launch { drawerState.close() } },
+          language = lang
         )
       }
     }
@@ -128,13 +132,16 @@ fun GoalsScreen(
           isRestModeActive = uiState.user.isRestModeActive,
           onMenuClick = { scope.launch { drawerState.open() } },
           onRestModeToggle = onToggleRestMode,
-          onSearchClick = { onScreenSelected(ScreenDestination.SEARCH) }
+          onSearchClick = { onScreenSelected(ScreenDestination.SEARCH) },
+          language = lang
         )
       },
       bottomBar = {
         MyOSBottomNavigationBar(
           currentScreen = ScreenDestination.GOALS,
           onTabSelected = onScreenSelected,
+          destinations = uiState.appSettings.bottomNavTabs,
+          language = lang,
           onMoreClick = { scope.launch { drawerState.open() } }
         )
       },
@@ -160,7 +167,7 @@ fun GoalsScreen(
         ) {
           Icon(
             imageVector = Icons.Default.Add,
-            contentDescription = "إضافة هدف جديد",
+            contentDescription = if (isArabic) "إضافة هدف جديد" else "Add New Goal",
             tint = TextWhite,
             modifier = Modifier.size(28.dp)
           )
@@ -199,22 +206,22 @@ fun GoalsScreen(
               )
               Spacer(modifier = Modifier.width(8.dp))
               Text(
-                text = "الأهداف",
+                text = com.example.model.AppStrings.goals(lang),
                 style = MaterialTheme.typography.headlineMedium.copy(
                   fontWeight = FontWeight.Bold,
                   fontSize = 24.sp
                 ),
-                color = TextPrimary
+                color = MaterialTheme.colorScheme.onSurface
               )
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-              text = "أحلام كبيرة .. تخطيط ذكي .. نتائج حقيقية",
+              text = if (isArabic) "أحلام كبيرة .. تخطيط ذكي .. نتائج حقيقية" else "Big dreams .. Smart planning .. Real results",
               style = MaterialTheme.typography.bodyMedium.copy(
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
               ),
-              color = TextSecondary
+              color = MaterialTheme.colorScheme.onSurfaceVariant
             )
           }
 
@@ -228,8 +235,8 @@ fun GoalsScreen(
               .border(1.dp, BrightBlue.copy(alpha = 0.25f), RoundedCornerShape(20.dp))
               .clickable(onClick = onOpenCreateGoal),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
           ) {
             Row(
               modifier = Modifier
@@ -244,7 +251,7 @@ fun GoalsScreen(
                   modifier = Modifier
                     .size(42.dp)
                     .clip(CircleShape)
-                    .background(GoalBlueBg),
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                   contentAlignment = Alignment.Center
                 ) {
                   Icon(
@@ -259,7 +266,7 @@ fun GoalsScreen(
 
                 Column {
                   Text(
-                    text = "إضافة هدف جديد",
+                    text = if (isArabic) "إضافة هدف جديد" else "Add New Goal",
                     style = MaterialTheme.typography.titleMedium.copy(
                       fontWeight = FontWeight.Bold,
                       fontSize = 15.sp
@@ -268,9 +275,9 @@ fun GoalsScreen(
                   )
                   Spacer(modifier = Modifier.height(2.dp))
                   Text(
-                    text = "ابدأ رحلتك نحو تحقيق أهدافك",
+                    text = if (isArabic) "ابدأ رحلتك نحو تحقيق أهدافك" else "Start your journey toward your goals",
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                    color = TextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                   )
                 }
               }
@@ -287,7 +294,7 @@ fun GoalsScreen(
 
           Spacer(modifier = Modifier.height(14.dp))
 
-          // 3. Filter Chips Row ("الكل", "النشطة", "المتوقفة مؤقتاً", "المكتملة")
+          // 3. Filter Chips Row
           Row(
             modifier = Modifier
               .fillMaxWidth()
@@ -299,10 +306,10 @@ fun GoalsScreen(
               Box(
                 modifier = Modifier
                   .clip(RoundedCornerShape(12.dp))
-                  .background(if (isSelected) BrightBlue else SurfaceWhite)
+                  .background(if (isSelected) BrightBlue else MaterialTheme.colorScheme.surface)
                   .border(
                     width = 1.dp,
-                    color = if (isSelected) BrightBlue else BorderLight,
+                    color = if (isSelected) BrightBlue else MaterialTheme.colorScheme.outlineVariant,
                     shape = RoundedCornerShape(12.dp)
                   )
                   .clickable { onSetGoalFilter(filter) }
@@ -310,12 +317,12 @@ fun GoalsScreen(
                 contentAlignment = Alignment.Center
               ) {
                 Text(
-                  text = filter.titleArabic,
+                  text = filter.getTitle(lang),
                   style = MaterialTheme.typography.bodySmall.copy(
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                     fontSize = 12.sp
                   ),
-                  color = if (isSelected) TextWhite else TextSecondary
+                  color = if (isSelected) TextWhite else MaterialTheme.colorScheme.onSurfaceVariant
                 )
               }
             }
