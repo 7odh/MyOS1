@@ -20,12 +20,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.model.AppLanguage
+import com.example.model.AppStrings
 import com.example.model.ScreenDestination
 import com.example.ui.theme.BrightBlue
 import com.example.ui.theme.GoalBlueBg
-import com.example.ui.theme.SurfaceWhite
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextSecondary
 
 data class BottomNavTab(
   val destination: ScreenDestination,
@@ -37,19 +36,33 @@ data class BottomNavTab(
 fun MyOSBottomNavigationBar(
   currentScreen: ScreenDestination,
   onTabSelected: (ScreenDestination) -> Unit,
+  destinations: List<ScreenDestination> = emptyList(),
+  language: AppLanguage = AppLanguage.ARABIC,
   onMoreClick: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
-  val tabs = listOf(
-    BottomNavTab(ScreenDestination.HOME, "الرئيسية", Icons.Outlined.Home),
-    BottomNavTab(ScreenDestination.GOALS, "الأهداف", Icons.Outlined.TrackChanges),
-    BottomNavTab(ScreenDestination.HABITS, "العادات", Icons.Outlined.Spa),
-    BottomNavTab(ScreenDestination.TASKS, "المهام", Icons.Outlined.CheckBox),
-    BottomNavTab(ScreenDestination.CALENDAR, "التقويم", Icons.Outlined.CalendarMonth)
-  )
+  val activeDestinations = if (destinations.isNotEmpty()) {
+    destinations
+  } else {
+    listOf(
+      ScreenDestination.HOME,
+      ScreenDestination.GOALS,
+      ScreenDestination.HABITS,
+      ScreenDestination.TASKS,
+      ScreenDestination.CALENDAR
+    )
+  }
+
+  val tabs = activeDestinations.map { dest ->
+    BottomNavTab(
+      destination = dest,
+      title = AppStrings.getDestinationTitle(dest, language),
+      icon = dest.icon
+    )
+  }
 
   NavigationBar(
-    containerColor = SurfaceWhite,
+    containerColor = MaterialTheme.colorScheme.surface,
     tonalElevation = 8.dp,
     modifier = modifier.fillMaxWidth()
   ) {
@@ -80,9 +93,9 @@ fun MyOSBottomNavigationBar(
         colors = NavigationBarItemDefaults.colors(
           selectedIconColor = BrightBlue,
           selectedTextColor = BrightBlue,
-          indicatorColor = GoalBlueBg,
-          unselectedIconColor = TextSecondary,
-          unselectedTextColor = TextSecondary
+          indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+          unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+          unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
         )
       )
     }

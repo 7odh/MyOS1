@@ -1,13 +1,20 @@
 package com.example.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.MyOSRepository
 import com.example.model.AmbientSoundType
 import com.example.model.AnalyticsTimePeriod
+import com.example.model.AppLanguage
+import com.example.model.AppSettings
+import com.example.model.BackupFileInfo
+import com.example.model.BackupFrequency
 import com.example.model.CalendarViewMode
 import com.example.model.DailyAnalytics
 import com.example.model.DayOfWeekArabic
+import com.example.model.ExportDataType
+import com.example.model.ExportFormat
 import com.example.model.FocusAttachment
 import com.example.model.FocusAttachType
 import com.example.model.FocusTimerMode
@@ -22,8 +29,10 @@ import com.example.model.ScreenDestination
 import com.example.model.SearchCategory
 import com.example.model.Task
 import com.example.model.TaskSchedule
+import com.example.model.ThemeMode
 import com.example.model.buildAnalyticsReport
 import com.example.util.AmbientSoundManager
+import com.example.util.BackupAndExportManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +41,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
 
 class MyOSViewModel(
   private val repository: MyOSRepository = MyOSRepository()
@@ -110,6 +120,19 @@ class MyOSViewModel(
           )
         }
       }.collect {}
+    }
+
+    viewModelScope.launch {
+      repository.appSettings.collect { settings ->
+        _uiState.update { it.copy(appSettings = settings) }
+      }
+    }
+
+    viewModelScope.launch {
+      delay(300)
+      if (repository.appSettings.value.autoRotateQuotes) {
+        repository.rotateMotivationalQuote()
+      }
     }
   }
 
@@ -879,6 +902,262 @@ class MyOSViewModel(
 
   fun toggleFlipClockFullScreen(fullscreen: Boolean) {
     _uiState.update { it.copy(isFlipClockFullScreen = fullscreen) }
+  }
+
+  // --- Settings & Control System ---
+
+  fun setThemeMode(mode: ThemeMode) {
+    repository.updateAppSettings { it.copy(themeMode = mode) }
+  }
+
+  fun setAppLanguage(lang: AppLanguage) {
+    repository.updateAppSettings { it.copy(language = lang) }
+  }
+
+  fun rotateMotivationalQuote() {
+    repository.rotateMotivationalQuote()
+  }
+
+  fun addMotivationalQuote(quote: String) {
+    if (quote.isNotBlank()) {
+      repository.addMotivationalQuote(quote)
+      _uiState.update {
+        it.copy(
+          isAddQuoteDialogOpen = false,
+          notificationMessage = "تمت إضافة الجملة التحفيزية بنجاح ✨"
+        )
+      }
+    }
+  }
+
+  fun deleteMotivationalQuote(index: Int) {
+    repository.deleteMotivationalQuote(index)
+    _uiState.update {
+      it.copy(notificationMessage = "تم حذف الجملة التحفيزية 🗑️")
+    }
+  }
+
+  fun toggleAutoRotateQuotes(enabled: Boolean) {
+    repository.updateAppSettings { it.copy(autoRotateQuotes = enabled) }
+  }
+
+  fun openAddQuoteDialog() {
+    _uiState.update { it.copy(isAddQuoteDialogOpen = true) }
+  }
+
+  fun closeAddQuoteDialog() {
+    _uiState.update { it.copy(isAddQuoteDialogOpen = false) }
+  }
+
+  // --- Bottom Navigation Bar Customization ---
+
+  fun toggleBottomNavTab(destination: ScreenDestination) {
+    repository.updateAppSettings { current ->
+      val currentList = current.bottomNavTabs
+      if (currentList.contains(destination)) {
+        if (currentList.size > 2) {
+          current.copy(bottomNavTabs = currentList - destination)
+        } else {
+          current
+        }
+      } else {
+        if (currentList.size < 5) {
+          current.copy(bottomNavTabs = currentList + destination)
+        } else {
+          current
+        }
+      }
+    }
+  }
+
+  fun moveBottomNavTabUp(destination: ScreenDestination) {
+    repository.updateAppSettings { current ->
+      val list = current.bottomNavTabs.toMutableList()
+      val index = list.indexOf(destination)
+      if (index > 0) {
+        val item = list.removeAt(index)
+        list.add(index - 1, item)
+        current.copy(bottomNavTabs = list)
+      } else current
+    }
+  }
+
+  fun moveBottomNavTabDown(destination: ScreenDestination) {
+    repository.updateAppSettings { current ->
+      val list = current.bottomNavTabs.toMutableList()
+      val index = list.indexOf(destination)
+      if (index >= 0 && index < list.size - 1) {
+        val item = list.removeAt(index)
+        list.add(index + 1, item)
+        current.copy(bottomNavTabs = list)
+      } else current
+    }
+  }
+
+  // --- Profile & Preferences ---
+
+  fun setBackupFrequency(freq: BackupFrequency) {
+    repository.updateAppSettings { it.copy(backupFrequency = freq) }
+  }
+
+  fun setUserAvatarEmoji(emoji: String) {
+    repository.updateAppSettings { it.copy(userAvatarEmoji = emoji) }
+  }
+
+  fun setUserTitle(title: String) {
+    repository.updateAppSettings { it.copy(userTitle = title) }
+  }
+
+  fun toggleSounds(enabled: Boolean) {
+    repository.updateAppSettings { it.copy(soundEnabled = enabled) }
+  }
+
+  fun toggleHaptics(enabled: Boolean) {
+    repository.updateAppSettings { it.copy(hapticsEnabled = enabled) }
+  }
+
+  // --- Local Backup & Restore System ---
+
+  fun refreshBackupsAndExports(context: Context) {
+    viewModelScope.launch {
+      val backups = BackupAndExportManager.listBackups(context)
+      val exports = BackupAndExportManager.listExports(context)
+      _uiState.update {
+        it.copy(
+          backupsList = backups,
+          exportsList = exports
+        )
+      }
+    }
+  }
+
+  fun createLocalBackup(context: Context) {
+    viewModelScope.launch {
+      try {
+        val bundle = repository.getDataBundle()
+        val file = BackupAndExportManager.createBackup(context, bundle)
+        repository.updateAppSettings { it.copy(lastBackupTimestamp = System.currentTimeMillis()) }
+        refreshBackupsAndExports(context)
+        _uiState.update {
+          it.copy(notificationMessage = "تم إنشاء نسخة احتياطية محلية بنجاح 💾 (${file.name})")
+        }
+      } catch (e: Exception) {
+        _uiState.update {
+          it.copy(notificationMessage = "حدث خطأ أثناء إنشاء النسخة الاحتياطية ❌")
+        }
+      }
+    }
+  }
+
+  fun openRestoreConfirmDialog(backup: BackupFileInfo) {
+    _uiState.update {
+      it.copy(
+        selectedBackupToRestore = backup,
+        isRestoreConfirmDialogOpen = true
+      )
+    }
+  }
+
+  fun closeRestoreConfirmDialog() {
+    _uiState.update {
+      it.copy(
+        selectedBackupToRestore = null,
+        isRestoreConfirmDialogOpen = false
+      )
+    }
+  }
+
+  fun confirmRestoreBackup(context: Context) {
+    val backup = _uiState.value.selectedBackupToRestore ?: return
+    viewModelScope.launch {
+      try {
+        val file = File(backup.filePath)
+        val bundle = BackupAndExportManager.restoreFromBackupFile(file)
+        if (bundle != null) {
+          repository.restoreData(bundle)
+          closeRestoreConfirmDialog()
+          refreshBackupsAndExports(context)
+          _uiState.update {
+            it.copy(notificationMessage = "تمت استعادة البيانات بنجاح 🔄")
+          }
+        } else {
+          _uiState.update {
+            it.copy(notificationMessage = "تعذر قراءة ملف النسخة الاحتياطية ❌")
+          }
+        }
+      } catch (e: Exception) {
+        _uiState.update {
+          it.copy(notificationMessage = "حدث خطأ أثناء استعادة البيانات ❌")
+        }
+      }
+    }
+  }
+
+  // --- Full Export System ---
+
+  fun exportData(
+    context: Context,
+    selectedTypes: Set<ExportDataType>,
+    format: ExportFormat,
+    shareImmediately: Boolean = true
+  ) {
+    if (selectedTypes.isEmpty()) {
+      _uiState.update { it.copy(notificationMessage = "يرجى تحديد نوع واحد على الأقل من البيانات لتصديرها ⚠️") }
+      return
+    }
+
+    viewModelScope.launch {
+      try {
+        val bundle = repository.getDataBundle()
+        val file = BackupAndExportManager.exportData(context, bundle, selectedTypes, format)
+        refreshBackupsAndExports(context)
+        _uiState.update {
+          it.copy(notificationMessage = "تم تصدير البيانات بنجاح في مجلد التصدير 📤 (${file.name})")
+        }
+        if (shareImmediately) {
+          BackupAndExportManager.shareFile(context, file)
+        }
+      } catch (e: Exception) {
+        _uiState.update {
+          it.copy(notificationMessage = "حدث خطأ أثناء تصدير البيانات ❌")
+        }
+      }
+    }
+  }
+
+  fun shareFile(context: Context, fileInfo: BackupFileInfo) {
+    try {
+      val file = File(fileInfo.filePath)
+      if (file.exists()) {
+        BackupAndExportManager.shareFile(context, file)
+      } else {
+        _uiState.update { it.copy(notificationMessage = "الملف غير موجود في الجهاز ❌") }
+      }
+    } catch (_: Exception) {}
+  }
+
+  // --- Reset & Clear App Data ---
+
+  fun openClearDataConfirmDialog() {
+    _uiState.update { it.copy(isClearDataConfirmDialogOpen = true) }
+  }
+
+  fun closeClearDataConfirmDialog() {
+    _uiState.update { it.copy(isClearDataConfirmDialogOpen = false) }
+  }
+
+  fun confirmClearAllData(context: Context) {
+    viewModelScope.launch {
+      // Clear active repository data (does NOT delete backups or exports folders)
+      repository.clearAllData(preserveUser = true)
+      closeClearDataConfirmDialog()
+      refreshBackupsAndExports(context)
+      _uiState.update {
+        it.copy(
+          notificationMessage = "تم مسح جميع بيانات الاختبار بنجاح. ملفات النسخ والتصدير آمنة في جهازك ✨"
+        )
+      }
+    }
   }
 
   override fun onCleared() {

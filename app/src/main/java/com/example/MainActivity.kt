@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -14,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.model.AppLanguage
 import com.example.model.ScreenDestination
 import com.example.ui.screens.AnalyticsScreen
 import com.example.ui.screens.CalendarScreen
@@ -25,8 +27,8 @@ import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.NotesScreen
 import com.example.ui.screens.PlaceholderScreen
 import com.example.ui.screens.SearchScreen
+import com.example.ui.screens.SettingsScreen
 import com.example.ui.screens.TasksScreen
-import com.example.ui.theme.BackgroundLight
 import com.example.ui.theme.MyApplicationTheme
 import com.example.viewmodel.MyOSViewModel
 
@@ -37,12 +39,18 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
     setContent {
-      MyApplicationTheme {
-        // Enforce RTL layout direction to match the Arabic design specification
-        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+      val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+      val layoutDirection = if (uiState.appSettings.language == AppLanguage.ARABIC) {
+        LayoutDirection.Rtl
+      } else {
+        LayoutDirection.Ltr
+      }
+
+      MyApplicationTheme(themeMode = uiState.appSettings.themeMode) {
+        CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
           Surface(
             modifier = Modifier.fillMaxSize(),
-            color = BackgroundLight
+            color = MaterialTheme.colorScheme.background
           ) {
             MyOSApp(viewModel = viewModel)
           }
@@ -116,7 +124,8 @@ fun MyOSApp(viewModel: MyOSViewModel) {
           onCloseCreateGoal = viewModel::closeCreateGoalSheet,
           onSaveGoalFull = viewModel::saveGoal,
           onCloseCreateHabit = viewModel::closeCreateHabitSheet,
-          onSaveHabitFull = viewModel::saveHabit
+          onSaveHabitFull = viewModel::saveHabit,
+          onRotateQuote = viewModel::rotateMotivationalQuote
         )
       }
       ScreenDestination.CALENDAR -> {
@@ -253,6 +262,39 @@ fun MyOSApp(viewModel: MyOSViewModel) {
           onPostponeGoalTask = viewModel::postponeGoalTask,
           onIncrementHabit = viewModel::incrementHabit,
           onToggleHabitBoolean = viewModel::toggleHabitBoolean
+        )
+      }
+      ScreenDestination.SETTINGS -> {
+        SettingsScreen(
+          uiState = uiState,
+          onNavigateBack = { viewModel.onScreenSelected(ScreenDestination.HOME) },
+          onSetThemeMode = viewModel::setThemeMode,
+          onSetLanguage = viewModel::setAppLanguage,
+          onRotateQuote = viewModel::rotateMotivationalQuote,
+          onAddQuote = viewModel::addMotivationalQuote,
+          onDeleteQuote = viewModel::deleteMotivationalQuote,
+          onToggleAutoRotateQuotes = viewModel::toggleAutoRotateQuotes,
+          onToggleBottomNavTab = viewModel::toggleBottomNavTab,
+          onMoveBottomNavTabUp = viewModel::moveBottomNavTabUp,
+          onMoveBottomNavTabDown = viewModel::moveBottomNavTabDown,
+          onSetBackupFrequency = viewModel::setBackupFrequency,
+          onSetUserAvatarEmoji = viewModel::setUserAvatarEmoji,
+          onSetUserTitle = viewModel::setUserTitle,
+          onSaveUserName = viewModel::saveUserName,
+          onToggleSounds = viewModel::toggleSounds,
+          onToggleHaptics = viewModel::toggleHaptics,
+          onRefreshBackups = viewModel::refreshBackupsAndExports,
+          onCreateBackup = viewModel::createLocalBackup,
+          onOpenRestoreDialog = viewModel::openRestoreConfirmDialog,
+          onCloseRestoreDialog = viewModel::closeRestoreConfirmDialog,
+          onConfirmRestore = viewModel::confirmRestoreBackup,
+          onExportData = { ctx, types, format, share ->
+            viewModel.exportData(ctx, types, format, share)
+          },
+          onShareFile = viewModel::shareFile,
+          onOpenClearDataDialog = viewModel::openClearDataConfirmDialog,
+          onCloseClearDataDialog = viewModel::closeClearDataConfirmDialog,
+          onConfirmClearAllData = viewModel::confirmClearAllData
         )
       }
       else -> {

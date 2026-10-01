@@ -58,7 +58,7 @@ fun NavigationDrawerContent(
     modifier = modifier
       .fillMaxHeight()
       .width(280.dp)
-      .background(SurfaceWhite)
+      .background(MaterialTheme.colorScheme.surface)
       .statusBarsPadding()
       .navigationBarsPadding()
       .padding(horizontal = 16.dp, vertical = 12.dp)
@@ -83,14 +83,14 @@ fun NavigationDrawerContent(
               fontWeight = FontWeight.Bold,
               fontSize = 18.sp
             ),
-            color = TextPrimary
+            color = MaterialTheme.colorScheme.onSurface
           )
           Text(
             text = "عقلك الثاني",
             style = MaterialTheme.typography.bodySmall.copy(
               fontSize = 10.sp
             ),
-            color = TextSecondary
+            color = MaterialTheme.colorScheme.onSurfaceVariant
           )
         }
       }
@@ -102,7 +102,7 @@ fun NavigationDrawerContent(
         Icon(
           imageVector = Icons.Default.Close,
           contentDescription = "إغلاق القائمة",
-          tint = TextSecondary,
+          tint = MaterialTheme.colorScheme.onSurfaceVariant,
           modifier = Modifier.size(20.dp)
         )
       }
@@ -177,8 +177,8 @@ private fun DrawerMenuItem(
   onClick: () -> Unit,
   modifier: Modifier = Modifier
 ) {
-  val bgColor = if (isSelected) GoalBlueBg else Color.Transparent
-  val contentColor = if (isSelected) BrightBlue else TextPrimary
+  val bgColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+  val contentColor = if (isSelected) BrightBlue else MaterialTheme.colorScheme.onSurface
 
   Row(
     modifier = modifier

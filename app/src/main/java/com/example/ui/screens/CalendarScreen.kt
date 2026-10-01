@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -122,6 +123,10 @@ fun CalendarScreen(
   onDismissNotification: () -> Unit,
   modifier: Modifier = Modifier
 ) {
+  BackHandler {
+    onScreenSelected(ScreenDestination.HOME)
+  }
+
   val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
   val scope = rememberCoroutineScope()
   val snackbarHostState = remember { SnackbarHostState() }

@@ -44,12 +44,15 @@ import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TextWhite
 
+import androidx.compose.material.icons.outlined.Settings
+
 @Composable
 fun MyOSHeader(
   isRestModeActive: Boolean,
   onMenuClick: () -> Unit,
   onRestModeToggle: () -> Unit,
   onSearchClick: () -> Unit = {},
+  onSettingsClick: (() -> Unit)? = null,
   modifier: Modifier = Modifier
 ) {
   val restBgColor by animateColorAsState(
@@ -68,7 +71,7 @@ fun MyOSHeader(
   Box(
     modifier = modifier
       .fillMaxWidth()
-      .background(BackgroundLight)
+      .background(MaterialTheme.colorScheme.background)
       .statusBarsPadding()
   ) {
     Row(
@@ -88,7 +91,7 @@ fun MyOSHeader(
         Icon(
           imageVector = Icons.Outlined.Menu,
           contentDescription = "القائمة الجانبية",
-          tint = TextPrimary,
+          tint = MaterialTheme.colorScheme.onSurface,
           modifier = Modifier.size(26.dp)
         )
       }
@@ -110,7 +113,7 @@ fun MyOSHeader(
               fontSize = 20.sp,
               letterSpacing = 0.5.sp
             ),
-            color = TextPrimary
+            color = MaterialTheme.colorScheme.onBackground
           )
           Text(
             text = "عقلك الثاني",
@@ -118,23 +121,40 @@ fun MyOSHeader(
               fontSize = 11.sp,
               fontWeight = FontWeight.Medium
             ),
-            color = TextSecondary
+            color = MaterialTheme.colorScheme.onSurfaceVariant
           )
         }
       }
 
-      // Action buttons: Search magnifying glass and "راحة" (Rest Day) Button
+      // Action buttons: Settings, Search and "راحة" Button
       Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
       ) {
+        if (onSettingsClick != null) {
+          IconButton(
+            onClick = onSettingsClick,
+            modifier = Modifier
+              .size(38.dp)
+              .clip(CircleShape)
+              .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+          ) {
+            Icon(
+              imageVector = Icons.Outlined.Settings,
+              contentDescription = "الإعدادات والضبط",
+              tint = MaterialTheme.colorScheme.onSurface,
+              modifier = Modifier.size(20.dp)
+            )
+          }
+        }
+
         // Global Search Lens Button
         IconButton(
           onClick = onSearchClick,
           modifier = Modifier
             .size(38.dp)
             .clip(CircleShape)
-            .background(Color(0xFFEFF6FF))
+            .background(GoalBlueBg)
         ) {
           Icon(
             imageVector = Icons.Outlined.Search,

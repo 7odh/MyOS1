@@ -19,6 +19,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
@@ -91,6 +92,7 @@ fun HomeScreen(
   onPostponeTask: (String) -> Unit = {},
   onPostponeGoalTask: (String, String) -> Unit = { _, _ -> },
   onDismissNotification: () -> Unit,
+  onRotateQuote: () -> Unit = {},
   onCloseCreateTask: () -> Unit = {},
   onSaveGeneralTask: (
     title: String,
@@ -158,6 +160,9 @@ fun HomeScreen(
           onRestModeToggle = onToggleRestMode,
           onSearchClick = {
             onScreenSelected(ScreenDestination.SEARCH)
+          },
+          onSettingsClick = {
+            onScreenSelected(ScreenDestination.SETTINGS)
           }
         )
       },
@@ -165,6 +170,8 @@ fun HomeScreen(
         MyOSBottomNavigationBar(
           currentScreen = uiState.currentScreen,
           onTabSelected = onScreenSelected,
+          destinations = uiState.appSettings.bottomNavTabs,
+          language = uiState.appSettings.language,
           onMoreClick = {
             scope.launch { drawerState.open() }
           }
@@ -199,7 +206,7 @@ fun HomeScreen(
         }
       },
       snackbarHost = { SnackbarHost(snackbarHostState) },
-      containerColor = BackgroundLight,
+      containerColor = MaterialTheme.colorScheme.background,
       modifier = modifier
     ) { innerPadding ->
       Box(
@@ -220,7 +227,8 @@ fun HomeScreen(
             userName = uiState.user.name,
             motivationalSentence = uiState.user.motivationalSentence,
             isMotivationEnabled = uiState.user.isMotivationEnabled,
-            onEditNameClick = onEditNameClick
+            onEditNameClick = onEditNameClick,
+            onRotateQuote = onRotateQuote
           )
 
           Spacer(modifier = Modifier.height(4.dp))

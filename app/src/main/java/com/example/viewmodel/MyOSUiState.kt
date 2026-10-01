@@ -106,6 +106,13 @@ data class MyOSUiState(
   val globalSearchQuery: String = "",
   val activeSearchCategory: SearchCategory = SearchCategory.ALL,
   val recentSearches: List<String> = listOf("القرآن", "الجيم", "لوحة التحكم", "كود", "إنجليزي"),
+  val appSettings: com.example.model.AppSettings = com.example.model.AppSettings(),
+  val backupsList: List<com.example.model.BackupFileInfo> = emptyList(),
+  val exportsList: List<com.example.model.BackupFileInfo> = emptyList(),
+  val isClearDataConfirmDialogOpen: Boolean = false,
+  val isAddQuoteDialogOpen: Boolean = false,
+  val isRestoreConfirmDialogOpen: Boolean = false,
+  val selectedBackupToRestore: com.example.model.BackupFileInfo? = null,
   val notificationMessage: String? = null
 ) {
   val selectedGoal: Goal?

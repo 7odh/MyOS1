@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -115,6 +116,10 @@ fun NotesScreen(
   onDismissNotification: () -> Unit,
   modifier: Modifier = Modifier
 ) {
+  BackHandler {
+    onScreenSelected(ScreenDestination.HOME)
+  }
+
   val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
   val scope = rememberCoroutineScope()
   val snackbarHostState = remember { SnackbarHostState() }

@@ -2,8 +2,10 @@ package com.example.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import com.example.model.ThemeMode
 
 private val MyOSLightColorScheme = lightColorScheme(
   primary = IndigoPrimary,
@@ -25,15 +27,41 @@ private val MyOSLightColorScheme = lightColorScheme(
   outline = BorderLight
 )
 
+private val MyOSDarkColorScheme = darkColorScheme(
+  primary = BrightBlue,
+  onPrimary = TextWhite,
+  primaryContainer = GoalBlueBgDark,
+  onPrimaryContainer = ElectricCyan,
+  secondary = ElectricViolet,
+  onSecondary = TextWhite,
+  secondaryContainer = TaskVioletBgDark,
+  onSecondaryContainer = SoftViolet,
+  tertiary = ElectricCyan,
+  onTertiary = BackgroundDark,
+  background = BackgroundDark,
+  onBackground = TextPrimaryDark,
+  surface = SurfaceDark,
+  onSurface = TextPrimaryDark,
+  surfaceVariant = SurfaceCardDark,
+  onSurfaceVariant = TextSecondaryDark,
+  outline = BorderDark
+)
+
 @Composable
 fun MyApplicationTheme(
-  darkTheme: Boolean = isSystemInDarkTheme(),
-  // Specification states: "التصميم يدعم الوضع الفاتح فقط (في هذه المرحلة)" - Light mode primary
+  themeMode: ThemeMode = ThemeMode.SYSTEM,
   content: @Composable () -> Unit
 ) {
+  val isDark = when (themeMode) {
+    ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    ThemeMode.LIGHT -> false
+    ThemeMode.DARK -> true
+  }
+
   MaterialTheme(
-    colorScheme = MyOSLightColorScheme,
+    colorScheme = if (isDark) MyOSDarkColorScheme else MyOSLightColorScheme,
     typography = Typography,
     content = content
   )
 }
+

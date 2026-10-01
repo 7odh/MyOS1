@@ -1,5 +1,6 @@
 package com.example.data
 
+import com.example.model.AppSettings
 import com.example.model.DailyAnalytics
 import com.example.model.DayHabitRecord
 import com.example.model.DayOfWeekArabic
@@ -17,6 +18,8 @@ import com.example.model.User
 import com.example.model.getCurrentDayOfWeekArabic
 import com.example.model.getTodayDateString
 import com.example.model.getTomorrowDateString
+import com.example.util.ExportDataBundle
+import com.example.util.RestoredDataBundle
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,6 +31,9 @@ import java.util.Locale
 import java.util.UUID
 
 class MyOSRepository {
+
+  private val _appSettings = MutableStateFlow(AppSettings())
+  val appSettings: StateFlow<AppSettings> = _appSettings.asStateFlow()
 
   private val _user = MutableStateFlow(
     User(
@@ -1132,6 +1138,82 @@ class MyOSRepository {
       tasksTotal = todayGeneralTasks.size,
       goalsCompleted = completedTodayGoalTasks,
       goalsTotal = totalTodayGoalTasks
+    )
+  }
+
+  fun updateAppSettings(transform: (AppSettings) -> AppSettings) {
+    _appSettings.update(transform)
+  }
+
+  fun rotateMotivationalQuote() {
+    _appSettings.update { settings ->
+      if (settings.motivationalQuotes.isEmpty()) settings
+      else {
+        val nextIndex = (settings.currentQuoteIndex + 1) % settings.motivationalQuotes.size
+        val nextQuote = settings.motivationalQuotes[nextIndex]
+        _user.update { it.copy(motivationalSentence = nextQuote) }
+        settings.copy(currentQuoteIndex = nextIndex)
+      }
+    }
+  }
+
+  fun addMotivationalQuote(quote: String) {
+    if (quote.isBlank()) return
+    _appSettings.update { settings ->
+      val updated = settings.motivationalQuotes + quote.trim()
+      settings.copy(motivationalQuotes = updated)
+    }
+  }
+
+  fun deleteMotivationalQuote(index: Int) {
+    _appSettings.update { settings ->
+      if (settings.motivationalQuotes.size <= 1) return@update settings
+      val updated = settings.motivationalQuotes.toMutableList().apply {
+        if (index in indices) removeAt(index)
+      }
+      val nextIdx = settings.currentQuoteIndex.coerceIn(0, updated.size - 1)
+      val nextQuote = updated[nextIdx]
+      _user.update { it.copy(motivationalSentence = nextQuote) }
+      settings.copy(motivationalQuotes = updated, currentQuoteIndex = nextIdx)
+    }
+  }
+
+  fun setMotivationalQuote(quote: String) {
+    _user.update { it.copy(motivationalSentence = quote) }
+  }
+
+  fun clearAllData(preserveUser: Boolean = true) {
+    _habits.value = emptyList()
+    _generalTasks.value = emptyList()
+    _goals.value = emptyList()
+    _notes.value = emptyList()
+    _dailyHistory.value = emptyMap()
+    if (!preserveUser) {
+      _user.value = User()
+    }
+  }
+
+  fun restoreData(bundle: RestoredDataBundle) {
+    if (bundle.user != null) {
+      _user.value = bundle.user
+    }
+    _habits.value = bundle.habits
+    _generalTasks.value = bundle.tasks
+    _goals.value = bundle.goals
+    _notes.value = bundle.notes
+    if (bundle.dailyHistory.isNotEmpty()) {
+      _dailyHistory.value = bundle.dailyHistory
+    }
+  }
+
+  fun getDataBundle(): ExportDataBundle {
+    return ExportDataBundle(
+      user = _user.value,
+      tasks = _generalTasks.value,
+      habits = _habits.value,
+      goals = _goals.value,
+      notes = _notes.value,
+      dailyHistory = _dailyHistory.value
     )
   }
 }
